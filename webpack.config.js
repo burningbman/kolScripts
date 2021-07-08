@@ -11,6 +11,7 @@ module.exports = {
         bb_hobo: './src/bb_hobo.ts',
         bb_combat: './src/bb_combat.ts',
         bb_login: './src/bb_login.ts',
+        bb_runTyson: './src/bb_runTyson.ts',
     },
     mode: 'development',
     devtool: false,

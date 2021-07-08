@@ -4,12 +4,10 @@ import {
     getInventory,
     putCloset,
     toItem,
-    autosellPrice,
-    itemAmount
+    autosellPrice
 } from 'kolmafia';
 
 export function main() {
-    let stealableItems = new Map();
     let invItems = getInventory();
 
     batchOpen();
