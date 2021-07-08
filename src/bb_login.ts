@@ -1,4 +1,4 @@
-import { get, $item, have } from 'libram';
+import { get, $item, have, Macro, $skill } from 'libram';
 import { use, visitUrl, runChoice, cliExecute, wait, isUnrestricted, setAutoAttack, myName } from 'kolmafia';
 import { setClan } from './lib';
 
@@ -12,7 +12,8 @@ export function main() {
     }
 
     if (!get('_glitchItemImplemented') && have($item`glitch season reward name`)) {
-        cliExecute('autoattack attack');
+        cliExecute('ccs garbo');
+        Macro.skill($skill`saucegeyser`).repeat().setAutoAttack();
         use($item`glitch season reward name`);
         visitUrl('inv_eat.php?which=3&whichitem=10207pwd=');
         setAutoAttack(0);
@@ -40,7 +41,7 @@ export function main() {
 
             let emptiedPockets = get('cargoPocketsEmptied');
             let pocket = deskBellPockets.find(pocketNum => {
-                if (typeof(emptiedPockets) === 'number') {
+                if (typeof (emptiedPockets) === 'number') {
                     return emptiedPockets === pocketNum;
                 }
 
@@ -64,13 +65,13 @@ export function main() {
             ]
             choices.forEach((c) => runChoice(c));
         }
-
-        // prep for mushroom garden fight
-        use($item`Oscus's neverending soda`);
-        cliExecute('autoattack saucegeyser');
     }
 
     if (!get('breakfastCompleted')) {
+        // prep for mushroom garden fight
+        use($item`Oscus's neverending soda`);
+        cliExecute('ccs garbo');
+        Macro.skill($skill`saucegeyser`).repeat().setAutoAttack();
         cliExecute('breakfast');
         setAutoAttack(0);
     }
