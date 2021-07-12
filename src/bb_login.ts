@@ -1,6 +1,13 @@
 import { get, $item, have, Macro, $skill } from 'libram';
-import { use, visitUrl, runChoice, cliExecute, wait, isUnrestricted, setAutoAttack, myName } from 'kolmafia';
+import { use, visitUrl, runChoice, cliExecute, wait, isUnrestricted, setAutoAttack, myName, print } from 'kolmafia';
 import { setClan } from './lib';
+
+function shuffleArray(array: any[]) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+}
 
 export function main() {
     if (myName().toLowerCase() !== 'burningbman') {
@@ -38,11 +45,12 @@ export function main() {
         // Cargo Shorts
         if (!get('_cargoPocketEmptied')) {
             let deskBellPockets = [517, 590, 653, 553, 587];
+            shuffleArray(deskBellPockets);
 
             let emptiedPockets = get('cargoPocketsEmptied');
             let pocket = deskBellPockets.find(pocketNum => {
                 if (typeof (emptiedPockets) === 'number') {
-                    return emptiedPockets === pocketNum;
+                    return emptiedPockets !== pocketNum;
                 }
 
                 return !emptiedPockets.includes(pocketNum.toString())

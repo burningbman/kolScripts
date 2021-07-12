@@ -1,4 +1,4 @@
-import { useFamiliar, setProperty, getProperty, abort, visitUrl, print, equip, combatRateModifier, myHp, restoreHp, myName, myMp, eat, retrieveItem, myAdventures, setAutoAttack, cliExecute, runChoice, myMaxhp, userConfirm, availableAmount, closetAmount, putCloset, equippedItem } from 'kolmafia';
+import { useFamiliar, setProperty, getProperty, abort, visitUrl, print, equip, combatRateModifier, myHp, restoreHp, myName, myMp, eat, retrieveItem, myAdventures, setAutoAttack, cliExecute, runChoice, myMaxhp, userConfirm, availableAmount, closetAmount, putCloset, equippedItem, itemAmount, haveEffect } from 'kolmafia';
 
 import { ensureEffect, shrug, adventureHere, getPropertyInt, getPropertyIntInit, incrementProperty, setPropertyInt, setChoice, sausageFightGuaranteed, lastAdventureText } from './lib';
 
@@ -53,7 +53,7 @@ function fightSausageIfGuaranteed() {
         print(`Fighting a Kramco in the Noob Cave`);
         const currentOffhand = equippedItem($slot`off-hand`);
         equip($item`Kramco Sausage-o-Matic™`);
-        adventureHere($location`Noob Cave`);
+        adventureMacro($location`Noob Cave`, Macro.skill($skill`saucegeyser`));
 
         //Equip whatever we had here
         equip(currentOffhand);
@@ -66,7 +66,7 @@ export function getSneakyForHobos(sewers = false) {
     equip($item`chalk chlamys`);
     equip($slot`shirt`, $item`camouflage T-shirt`);
     sewers ? equip($item`gatorskin umbrella`) : equip($item`rusted-out shootin' iron`);
-    sewers ? equip($item`hobo code binder`) : equip($item`Cold Stone of Hatred`);
+    sewers ? equip($item`hobo code binder`) : equip($item`familiar scrapbook`);
     equip($item`Xiblaxian stealth trouser`);
     equip($slot`acc1`, $item`lucky gold ring`);
     equip($slot`acc2`, $item`mafia thumb ring`);
@@ -223,15 +223,19 @@ function sideZoneLoop(location: Location, sneaky: boolean, macro: Macro, callbac
         if (myMp() < 100)
             eat($item`magical sausage`);
         sneaky ? getSneakyForHobos() : getConfrontationalForHobos()
-        if (myHp() < myMaxhp() * 2 / 3)
+        if (myHp() < myMaxhp())
             restoreHp(myMaxhp());
 
         fightSausageIfGuaranteed();
 
         adventureMacro(location, macro);
 
+        if (haveEffect($effect`Beaten Up`)) {
+            abort('Got beaten up. Something is wrong.');
+        }
+
         // closet all hobo nickels so LGR doesn't grab them
-        putCloset(availableAmount($item`hobo nickel`), $item`hobo nickel`);
+        putCloset(itemAmount($item`hobo nickel`), $item`hobo nickel`);
 
         shouldBreak = callback();
     }
@@ -342,7 +346,7 @@ function runTheHeap(playingWithOthers = true) {
     print("Done in Heap", "red");
 }
 
-function runAHBG() {
+function runAHBG(danceCount = 0) {
     setProperty('choiceAdventure208', '2'); // Ah, So That's Where They've All Gone; Tiptoe through the tulips
     setProperty('choiceAdventure220', '2'); // Returning to the Tomb; Disturb not ye these bones
     setProperty('choiceAdventure293', '2'); // Flowers for You; Flee this creepy scene
@@ -351,7 +355,6 @@ function runAHBG() {
     setProperty('choiceAdventure204', '2'); // Skip adventure when Zombo is up
 
     getSneakyForHobos();
-    let danceCount = 0;
     retrieveItem(500, $item`New Age healing crystal`);
     sideZoneLoop($location`The Ancient Hobo Burial Ground`, true, Macro.item([$item`New Age healing crystal`, $item`New Age hurting crystal`]), function() {
         let done = false;
@@ -507,12 +510,14 @@ function runBB(tiresAlreadyStacked = 0, stack1 = -1, stack2 = -1) {
     print(`Done in BB. Tires on the stack: ` + tireCount, 'red');
 }
 
-export function main(action = 'auto') {
+export function main(input = 'auto') {
     setAutoAttack(0);
     cliExecute("mood hobo");
     cliExecute("ccs hobo");
 
-    switch (action) {
+    let actions = input.split(' ');
+
+    switch (actions[0]) {
         case 'auto':
             runSewer();
 
@@ -528,13 +533,13 @@ export function main(action = 'auto') {
             runSewer();
             break;
         case 'ee':
-            runEE();
+            runEE(parseInt(actions[1]));
             break;
         case 'heap':
             runTheHeap();
             break;
         case 'ahbg':
-            runAHBG();
+            runAHBG(parseInt(actions[1]));
             break;
         case 'pld':
             runPLD();
