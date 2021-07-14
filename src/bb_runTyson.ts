@@ -1,5 +1,5 @@
 import {
-    outfit, useFamiliar, cliExecute, myAdventures, buy, use, runChoice, visitUrl, mallPrice, toItem, myFullness, fullnessLimit, myInebriety, inebrietyLimit, print, availableAmount, isAccessible, getProperty, itemAmount
+    outfit, useFamiliar, cliExecute, myAdventures, buy, use, runChoice, visitUrl, mallPrice, toItem, myFullness, fullnessLimit, myInebriety, inebrietyLimit, print, availableAmount, isAccessible, getProperty, itemAmount, abort
 } from "kolmafia";
 import { $familiar, $item, get, $coinmaster } from "libram";
 import { getPropertyInt } from "./lib";
@@ -7,8 +7,8 @@ import { getPropertyInt } from "./lib";
 export function main() {
     // cargo shorts
     if (!get('_cargoPocketEmptied')) {
-        let emptiedPockets = getProperty('cargoPocketsEmptied');
-        emptiedPockets.split(',');
+        let emptiedPocketsPref = getProperty('cargoPocketsEmptied');
+        let emptiedPockets = emptiedPocketsPref.split(',');
 
         for (let i = 1; i <= 666; i++) {
             if (!emptiedPockets.includes(i.toString())) {
@@ -20,11 +20,14 @@ export function main() {
 
     // mallbuy a one-day ticket if needed
     if (availableAmount($item`one-day ticket to That 70s Volcano`) === 0) {
-        buy(1, $item`one-day ticket to That 70s Volcano`, 300000);
+        buy(1, $item`one-day ticket to That 70s Volcano`, 350000);
     }
 
     // ensure access to That 70s Volcano
     if (!isAccessible($coinmaster`Disco GiftCo`)) {
+        if (!availableAmount($item`one-day ticket to That 70s Volcano`)) {
+            abort('Don\'t have a 70s Volcano ticket.');
+        }
         use($item`one-day ticket to That 70s Volcano`);
     }
 
