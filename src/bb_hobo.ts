@@ -1,6 +1,6 @@
 import { useFamiliar, setProperty, getProperty, abort, visitUrl, print, equip, combatRateModifier, myHp, restoreHp, myName, myMp, eat, retrieveItem, myAdventures, setAutoAttack, cliExecute, runChoice, myMaxhp, userConfirm, availableAmount, closetAmount, putCloset, equippedItem, itemAmount, haveEffect } from 'kolmafia';
 
-import { ensureEffect, shrug, adventureHere, getPropertyInt, getPropertyIntInit, incrementProperty, setPropertyInt, setChoice, sausageFightGuaranteed, lastAdventureText } from './lib';
+import { ensureEffect, shrug, adventureHere, getPropertyInt, getPropertyIntInit, incrementProperty, setPropertyInt, setChoice, sausageFightGuaranteed, lastAdventureText, ensurePotionEffect } from './lib';
 
 import { $familiar, $location, $item, $slot, $effect, Macro, $items, get, adventureMacro, $skill, set } from 'libram';
 
@@ -79,7 +79,7 @@ export function getSneakyForHobos(sewers = false) {
     if (getPropertyInt('_feelLonelyUsed') < 3) {
         ensureEffect($effect`Feeling Lonely`);
     }
-    if (getPropertyInt('_powerfulGloveBatteryPowerUsed') < 100) {
+    if (getPropertyInt('_powerfulGloveBatteryPowerUsed') <= 90) {
         ensureEffect($effect`Invisible Avatar`);
     }
 
@@ -464,6 +464,15 @@ function runBB(tiresAlreadyStacked = 0, stack1 = -1, stack2 = -1) {
         stackKills[2] = tiresToKills(stack2);
     };
 
+    let ensureHotRes = () => {
+        ensurePotionEffect($effect`Oiled-Up`, $item`pec oil`);
+        ensurePotionEffect($effect`Spiro Gyro`, $item`programmable turtle`);
+        ensurePotionEffect($effect`Ancient Protected`, $item`Ancient Protector soda`);
+        ensurePotionEffect($effect`Frost Tea`, $item`cuppa Frost tea`);
+    }
+
+    ensureHotRes();
+
     sideZoneLoop($location`Burnbarrel Blvd.`, true, MACRO_KILL, function() {
         let lastEncounter = getProperty('lastEncounter');
         if (lastEncounter.includes('Getting Tired')) {
@@ -504,6 +513,7 @@ function runBB(tiresAlreadyStacked = 0, stack1 = -1, stack2 = -1) {
             return true;
         }
 
+        ensureHotRes();
         return false;
     })
 
@@ -514,6 +524,8 @@ export function main(input = 'auto') {
     setAutoAttack(0);
     cliExecute("mood hobo");
     cliExecute("ccs hobo");
+    cliExecute('boombox food');
+    cliExecute('mcd 0');
 
     let actions = input.split(' ');
 
@@ -545,7 +557,7 @@ export function main(input = 'auto') {
             runPLD();
             break;
         case 'bb':
-            runBB();
+            runBB(parseInt(actions[1]), parseInt(actions[2]));
             break;
     }
 }
