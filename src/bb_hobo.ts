@@ -6,6 +6,8 @@ import { $familiar, $location, $item, $slot, $effect, Macro, $items, get, advent
 
 let MACRO_KILL = Macro.skill($skill`saucegeyser`).repeat();
 
+const TRASH_PROP = '_BobSanders.TrashCount';
+
 type scoboParts = {
     boots: number;
     eyes: number;
@@ -247,6 +249,7 @@ function sideZoneLoop(location: Location, sneaky: boolean, macro: Macro, callbac
 
 const MAX_DIVERTS = 21;
 function runEE(totalIcicles = 50) {
+    print(`Running EE going for ${totalIcicles} before yodel`);
     setProperty('choiceAdventure273', '1'); // The Frigid Air; Pry open the freezer
     setProperty('choiceAdventure217', '1'); // There Goes Fritz!; Yodel a little
     setProperty('choiceAdventure292', '2'); // Cold Comfort; I’ll have the salad. I mean, I’ll leave.
@@ -268,6 +271,12 @@ function runEE(totalIcicles = 50) {
     else
         setProperty('choiceAdventure215', '3'); // Piping Cold; Go all CLUE on the third Pipe
 
+    if (icicles > totalIcicles) {
+        print("Desired icicle account achieved. Looking for big yodel.", "blue");
+        setProperty('choiceAdventure217', '3'); // There Goes Fritz!; Yodel your heart out
+    }
+
+    print(`Current status - diverts: ${diverts} icicles: ${icicles} targeted icicles: ${totalIcicles}`);
     print("Starting EE", "blue");
 
     sideZoneLoop($location`Exposure Esplanade`, true, MACRO_KILL, function() {
@@ -303,7 +312,7 @@ function runEE(totalIcicles = 50) {
         return done;
     });
 
-    print("Done in EE", "red");
+    print("Done in EE", "blue");
 }
 
 function runTheHeap(playingWithOthers = true) {
@@ -311,7 +320,7 @@ function runTheHeap(playingWithOthers = true) {
     setProperty('choiceAdventure295', '1'); // Juicy!; Buy
     setProperty('choiceAdventure203', '2'); // Deep Enough to Dive; Skip
 
-    if (getPropertyIntInit('_BobSanders.TrashCount', 5) >= 5) {
+    if (getPropertyIntInit(TRASH_PROP, 0) >= 5) {
         setProperty('choiceAdventure216', '1'); // The Compostal Service; Be Green
     } else {
         setProperty('choiceAdventure216', '2'); // The Compostal Service; Begone'
@@ -322,28 +331,28 @@ function runTheHeap(playingWithOthers = true) {
     else
         setProperty('choiceAdventure218', '1'); // I Refuse; Explore the junkpile
 
-    print("Starting Heap", "blue");
+    print("Starting Heap", "green");
 
     sideZoneLoop($location`The Heap`, true, MACRO_KILL, function() {
         if (getProperty('lastEncounter').includes('You vs. The Volcano')) {
-            incrementProperty('_BobSanders.TrashCount');//TODO: replace with myName()
-            if (getPropertyInt('_BobSanders.TrashCount') >= 5) {
+            incrementProperty(TRASH_PROP);//TODO: replace with myName()
+            if (getPropertyInt(TRASH_PROP) >= 5) {
                 setProperty('choiceAdventure216', '1'); // The Compostal Service; Be Green
             }
         }
-        if (getPropertyInt('_BobSanders.TrashCount') >= 5 && getProperty('lastEncounter').includes('The Compostal Service')) {
+        if (getPropertyInt(TRASH_PROP) >= 5 && getProperty('lastEncounter').includes('The Compostal Service')) {
             setProperty('choiceAdventure216', '2'); // The Compostal Service; Begone'
-            setPropertyInt('_BobSanders.TrashCount', 0);
+            setPropertyInt(TRASH_PROP, 0);
         }
 
         if (getProperty('lastEncounter').includes('Deep Enough to Dive')) {
-            print("Oscus is up.", "blue");
+            print("Oscus is up.", "green");
         }
 
         return getProperty('lastEncounter').includes('Deep Enough to Dive');
     });
 
-    print("Done in Heap", "red");
+    print("Done in Heap", "green");
 }
 
 function runAHBG(danceCount = 0) {
@@ -440,6 +449,7 @@ function tiresToKills(tires: number): number {
 }
 
 function runBB(tiresAlreadyStacked = 0, stack1 = -1, stack2 = -1) {
+    print(`Running BB with ${tiresAlreadyStacked} on the stack, ${stack1} in stack 1 and ${stack2} in stack 2`);
     //TODO: store counts in new property or whatever storage mafia uses.
     //TODO: Real calculation for the last stack.
     setProperty('choiceAdventure206', '2'); // Getting Tired; Toss the tire on the fire gently
@@ -520,7 +530,7 @@ function runBB(tiresAlreadyStacked = 0, stack1 = -1, stack2 = -1) {
     print(`Done in BB. Tires on the stack: ` + tireCount, 'red');
 }
 
-export function main(input = 'auto') {
+export function main(input: String) {
     setAutoAttack(0);
     cliExecute("mood hobo");
     cliExecute("ccs hobo");
@@ -530,18 +540,8 @@ export function main(input = 'auto') {
     let actions = input.split(' ');
 
     switch (actions[0]) {
-        case 'auto':
-            runSewer();
-
-            // EE and The Heap can always be done
-            runEE();
-            runTheHeap();
-
-            runPLD();
-            runAHBG();
-            runBB();
-            break;
         case 'sewer':
+            set(TRASH_PROP, 0);
             runSewer();
             break;
         case 'ee':
@@ -557,7 +557,12 @@ export function main(input = 'auto') {
             runPLD();
             break;
         case 'bb':
-            runBB(parseInt(actions[1]), parseInt(actions[2]));
+            let numTires = actions[1] ? parseInt(actions[1]) : 0;
+            let stack1Count = actions[2] ? parseInt(actions[2]) : -1;
+            runBB(numTires, stack1Count);
+            break;
+        default:
+            abort('no option passed');
             break;
     }
 }
