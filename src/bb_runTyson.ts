@@ -1,14 +1,17 @@
 import {
     outfit, useFamiliar, cliExecute, myAdventures, buy, use, runChoice, visitUrl, mallPrice, toItem, myFullness, fullnessLimit, myInebriety, inebrietyLimit, print, availableAmount, isAccessible, getProperty, itemAmount, abort
-} from "kolmafia";
-import { $familiar, $item, get, $coinmaster } from "libram";
-import { getPropertyInt } from "./lib";
+} from 'kolmafia';
+import { $familiar, $item, get, $coinmaster, set } from 'libram';
+import { getPropertyInt } from './lib';
 
-export function main() {
+export function main(): void {
+    set('logPreferenceChange', false);
+
     // cargo shorts
     if (!get('_cargoPocketEmptied')) {
-        let emptiedPocketsPref = getProperty('cargoPocketsEmptied');
-        let emptiedPockets = emptiedPocketsPref.split(',');
+        cliExecute('bb_goShopping');
+        const emptiedPocketsPref = getProperty('cargoPocketsEmptied');
+        const emptiedPockets = emptiedPocketsPref.split(',');
 
         for (let i = 1; i <= 666; i++) {
             if (!emptiedPockets.includes(i.toString())) {
@@ -37,10 +40,10 @@ export function main() {
         let cheapestCost = 1000000;
         let cheapestOption = -1;
         for (let i = 1; i <= 3; i++) {
-            let item = toItem(getPropertyInt('_volcanoItem' + i));
-            let itemCost = mallPrice(item);
-            let itemCount = getPropertyInt('_volcanoItemCount' + i);
-            let cost = itemCount * itemCost;
+            const item = toItem(getPropertyInt('_volcanoItem' + i));
+            const itemCost = mallPrice(item);
+            const itemCount = getPropertyInt('_volcanoItemCount' + i);
+            const cost = itemCount * itemCost;
             print(`Option ${i}: ${itemCount} ${item.name} @ ${itemCost} ea`);
             if (cost !== 0 && cost < cheapestCost) {
                 cheapestCost = cost;
@@ -64,14 +67,14 @@ export function main() {
     // gnerate all our turns
     if (myFullness() < fullnessLimit()) {
         useFamiliar($familiar`Stooper`);
-        cliExecute("CONSUME ALL");
+        cliExecute('CONSUME ALL');
     }
 
     // mine volcano and nightcap
     if (myInebriety() <= inebrietyLimit()) {
         outfit('volcano');
         cliExecute(`minevolcano ${myAdventures()}`);
-        myAdventures() === 0 && cliExecute("CONSUME NIGHTCAP");
+        myAdventures() === 0 && cliExecute('CONSUME NIGHTCAP');
     }
 
     // try to buy a one-day ticket with volcoinos
@@ -79,5 +82,6 @@ export function main() {
         buy($coinmaster`Disco GiftCo`, 1, $item`one-day ticket to That 70s Volcano`);
     }
 
-    outfit("Rollover");
+    outfit('Rollover');
+    set('logPreferenceChange', true);
 }

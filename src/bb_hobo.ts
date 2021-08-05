@@ -1,10 +1,10 @@
-import { useFamiliar, setProperty, getProperty, abort, visitUrl, print, equip, combatRateModifier, myHp, restoreHp, myName, myMp, eat, retrieveItem, myAdventures, setAutoAttack, cliExecute, runChoice, myMaxhp, userConfirm, availableAmount, closetAmount, putCloset, equippedItem, itemAmount, haveEffect } from 'kolmafia';
+import { useFamiliar, setProperty, getProperty, abort, visitUrl, print, equip, combatRateModifier, myHp, restoreHp, myName, myMp, eat, retrieveItem, myAdventures, setAutoAttack, cliExecute, runChoice, myMaxhp, userConfirm, availableAmount, closetAmount, putCloset, equippedItem, itemAmount, haveEffect, useSkill } from 'kolmafia';
 
 import { ensureEffect, shrug, adventureHere, getPropertyInt, getPropertyIntInit, incrementProperty, setPropertyInt, setChoice, sausageFightGuaranteed, lastAdventureText, ensurePotionEffect } from './lib';
 
 import { $familiar, $location, $item, $slot, $effect, Macro, $items, get, adventureMacro, $skill, set } from 'libram';
 
-let MACRO_KILL = Macro.skill($skill`saucegeyser`).repeat();
+const MACRO_KILL = Macro.skill($skill`saucegeyser`).repeat();
 
 const TRASH_PROP = '_BobSanders.TrashCount';
 
@@ -18,20 +18,20 @@ type scoboParts = {
 }
 
 export function getRichardCounts(): scoboParts {
-    let richard = visitUrl("clan_hobopolis.php?place=3&action=talkrichard&whichtalk=3");
+    const richard = visitUrl('clan_hobopolis.php?place=3&action=talkrichard&whichtalk=3');
     //TODO: account for commas in the number
-    let bootsMatch = richard.match("Richard has <b>(\\d+)</b> pairs? of charred hobo");
-    let boots = (bootsMatch !== null) ? parseInt(bootsMatch[1]) : 0;
-    let eyesMatch = richard.match("Richard has <b>(\\d+)</b> pairs? of frozen hobo");
-    let eyes = (eyesMatch !== null) ? parseInt(eyesMatch[1]) : 0;
-    let gutsMatch = richard.match("Richard has <b>(\\d+)</b> piles? of stinking hobo");
-    let guts = (gutsMatch !== null) ? parseInt(gutsMatch[1]) : 0;
-    let skullsMatch = richard.match("Richard has <b>(\\d+)</b> creepy hobo skull");
-    let skulls = (skullsMatch !== null) ? parseInt(skullsMatch[1]) : 0;
-    let crotchesMatch = richard.match("Richard has <b>(\\d+)</b> hobo crotch");
-    let crotches = (crotchesMatch !== null) ? parseInt(crotchesMatch[1]) : 0;
-    let skinsMatch = richard.match("Richard has <b>(\\d+)</b> hobo skin");
-    let skins = (skinsMatch !== null) ? parseInt(skinsMatch[1]) : 0;
+    const bootsMatch = richard.match('Richard has <b>(\\d+)</b> pairs? of charred hobo');
+    const boots = (bootsMatch !== null) ? parseInt(bootsMatch[1]) : 0;
+    const eyesMatch = richard.match('Richard has <b>(\\d+)</b> pairs? of frozen hobo');
+    const eyes = (eyesMatch !== null) ? parseInt(eyesMatch[1]) : 0;
+    const gutsMatch = richard.match('Richard has <b>(\\d+)</b> piles? of stinking hobo');
+    const guts = (gutsMatch !== null) ? parseInt(gutsMatch[1]) : 0;
+    const skullsMatch = richard.match('Richard has <b>(\\d+)</b> creepy hobo skull');
+    const skulls = (skullsMatch !== null) ? parseInt(skullsMatch[1]) : 0;
+    const crotchesMatch = richard.match('Richard has <b>(\\d+)</b> hobo crotch');
+    const crotches = (crotchesMatch !== null) ? parseInt(crotchesMatch[1]) : 0;
+    const skinsMatch = richard.match('Richard has <b>(\\d+)</b> hobo skin');
+    const skins = (skinsMatch !== null) ? parseInt(skinsMatch[1]) : 0;
 
     print('Boots ' + boots, 'red');
     print('Eyes ' + eyes, 'blue');
@@ -47,12 +47,12 @@ export function getRichardCounts(): scoboParts {
         skulls: skulls,
         crotches: crotches,
         skins: skins
-    }
+    };
 }
 
 function fightSausageIfGuaranteed() {
     if (sausageFightGuaranteed()) {
-        print(`Fighting a Kramco in the Noob Cave`);
+        print('Fighting a Kramco in the Noob Cave');
         const currentOffhand = equippedItem($slot`off-hand`);
         equip($item`Kramco Sausage-o-Matic™`);
         adventureMacro($location`Noob Cave`, Macro.skill($skill`saucegeyser`));
@@ -62,14 +62,15 @@ function fightSausageIfGuaranteed() {
     }
 }
 
-export function getSneakyForHobos(sewers = false) {
+const getSneakyForHobos = (sewers = false, bb = false): void => {
     useFamiliar($familiar`Shorter-Order Cook`);
+    equip($slot`familiar`, $item`blue plate`);
     equip($item`Xiblaxian stealth cowl`);
     equip($item`chalk chlamys`);
     equip($slot`shirt`, $item`camouflage T-shirt`);
     sewers ? equip($item`gatorskin umbrella`) : equip($item`rusted-out shootin' iron`);
     sewers ? equip($item`hobo code binder`) : equip($item`familiar scrapbook`);
-    equip($item`Xiblaxian stealth trouser`);
+    bb ? equip($item`Jeans of Loathing`) : equip($item`Xiblaxian stealth trouser`);
     equip($slot`acc1`, $item`lucky gold ring`);
     equip($slot`acc2`, $item`mafia thumb ring`);
     equip($slot`acc3`, $item`Mr. Cheeng's spectacles`);
@@ -85,10 +86,11 @@ export function getSneakyForHobos(sewers = false) {
         ensureEffect($effect`Invisible Avatar`);
     }
 
-    if (combatRateModifier() > -27) {
+    const desiredNonCombat = bb ? -26 : -27;
+    if (combatRateModifier() > desiredNonCombat) {
         abort('Not sneaky enough.');
     }
-}
+};
 
 export function getConfrontationalForHobos() {
     useFamiliar($familiar`Jumpsuited Hound Dog`);
@@ -96,7 +98,7 @@ export function getConfrontationalForHobos() {
     equip($item`Misty Cloak`);
     equip($slot`shirt`, $item`"Remember the Trees" Shirt`);
     equip($slot`off-hand`, $item`none`);
-    equip($item`giant turkey leg`);
+    equip($item`Staff of Simmering Hatred`);
     equip($item`Spelunker's khakis`);
     equip($slot`acc1`, $item`lucky gold ring`);
     equip($slot`acc2`, $item`mafia thumb ring`);
@@ -106,14 +108,14 @@ export function getConfrontationalForHobos() {
     ensureEffect($effect`Carlweather's Cantata of Confrontation`);
     shrug($effect`The Sonata of Sneakiness`);
 
-    if (combatRateModifier() < 26)
+    if (combatRateModifier() < 25)
         abort('Not confrontational enough.');
 }
 
 export function getHoboCountsRe(regex: RegExp): number {
     const logs = visitUrl('clan_raidlogs.php').replace(/a tirevalanch/gm, '1 tirevalanch');//TODO: maybe look for "(x turn"
     let match;
-    let total: number = 0;
+    let total = 0;
 
     if (regex != null)
         while ((match = regex.exec(logs)) !== null) {
@@ -130,16 +132,16 @@ function calculateGratesAndValues(): { grates: number, valves: number } {
     let grateCount = 0;
     let valveCount = 0;
 
-    let raidLogs = visitUrl('clan_raidlogs.php').split('<br>');
+    const raidLogs = visitUrl('clan_raidlogs.php').split('<br>');
 
     raidLogs.forEach(function(raidLog: string) {
-        let grateCheck = raidLog.match(/(grate.*\()(\d*).*/)
+        const grateCheck = raidLog.match(/(grate.*\()(\d*).*/)
         if (grateCheck) {
             grateCount += parseInt(grateCheck[2]);
             return;
         }
 
-        let valveCheck = raidLog.match(/(level.*\()(\d*).*/);
+        const valveCheck = raidLog.match(/(level.*\()(\d*).*/);
         if (valveCheck) {
             valveCount += parseInt(valveCheck[2]);
         }
@@ -168,7 +170,7 @@ function runSewer() {
 
     while (!throughSewers()) {
         if (checkGravesAndValues) {
-            let sewerStatus = calculateGratesAndValues();
+            const sewerStatus = calculateGratesAndValues();
 
             if (sewerStatus.grates < 20) {
                 set("choiceAdventure198", 3);
@@ -213,18 +215,18 @@ function runSewer() {
         );
     }
 
-    let sewerStatus = calculateGratesAndValues();
+    const sewerStatus = calculateGratesAndValues();
     print('Valves: ' + sewerStatus.valves + ' Grates: ' + sewerStatus.grates, 'green');
     print('Through the sewers.', 'green');
 }
 
 function sideZoneLoop(location: Location, sneaky: boolean, macro: Macro, callback: Function) {
     let shouldBreak = false;
+    sneaky ? getSneakyForHobos(false, location === $location`Burnbarrel Blvd.`) : getConfrontationalForHobos();
 
     while (!shouldBreak && myAdventures() !== 0) {
         if (myMp() < 100)
             eat($item`magical sausage`);
-        sneaky ? getSneakyForHobos() : getConfrontationalForHobos()
         if (myHp() < myMaxhp())
             restoreHp(myMaxhp());
 
@@ -258,7 +260,7 @@ function runEE(totalIcicles = 50) {
     // TODO: update icicles and diverts each loop
     let icicles = getHoboCountsRe(/water pipes \((\d+) turns?\)/gm);
     let diverts = getHoboCountsRe(/cold water out of Exposure Esplanade \((\d+) turns?\)/gm);
-    let bigYodelDone = getHoboCountsRe(new RegExp('\>' + myName() + ' \(\#\d*\) yodeled like crazy \\((\\d+) turns?\\)', 'gm')) > 0;
+    const bigYodelDone = getHoboCountsRe(new RegExp('\>' + myName() + ' \(\#\d*\) yodeled like crazy \\((\\d+) turns?\\)', 'gm')) > 0;
 
     if (bigYodelDone) {
         print("Big yodel already done in EE. Looking elsewhere.", "blue");
@@ -363,6 +365,10 @@ function runAHBG(danceCount = 0) {
     setProperty('choiceAdventure222', '1'); // A Chiller Night (2); Dance with them
     setProperty('choiceAdventure204', '2'); // Skip adventure when Zombo is up
 
+    if (danceCount >= 5) {
+        setProperty('choiceAdventure208', '1'); // Ah, So That's Where They've All Gone; Send the flowers to The Heap
+    }
+
     getSneakyForHobos();
     retrieveItem(500, $item`New Age healing crystal`);
     sideZoneLoop($location`The Ancient Hobo Burial Ground`, true, Macro.item([$item`New Age healing crystal`, $item`New Age hurting crystal`]), function() {
@@ -373,7 +379,7 @@ function runAHBG(danceCount = 0) {
                 setProperty('choiceAdventure208', '1'); // Ah, So That's Where They've All Gone; Send the flowers to The Heap
             }
         }
-        if (danceCount >= 5 && getProperty('lastEncounter').includes(`Ah, So That's Where They've All Gone`)) {
+        if (danceCount >= 5 && getProperty('lastEncounter').includes('Ah, So That\'s Where They\'ve All Gone')) {
             setProperty('choiceAdventure208', '2'); // Ah, So That's Where They've All Gone; Tiptoe through the tulips
             danceCount = 0;
         }
@@ -381,13 +387,14 @@ function runAHBG(danceCount = 0) {
             print('Zombo is up', 'blue');
             done = true;
         }
+        print('Dance count: ' + danceCount, 'blue');
         return done;
     });
     print('Done in AHBG', 'blue');
 }
 
 function runPLD(minFlimflams = 10) {
-    let diverts = getHoboCountsRe(/cold water out of Exposure Esplanade \((\d+) turns?\)/gm);
+    const diverts = getHoboCountsRe(/cold water out of Exposure Esplanade \((\d+) turns?\)/gm);
     if (diverts < 21) {
         if (!userConfirm('Do AHBG before 21 water diverts?', 10000, false)) return;
     }
@@ -410,7 +417,7 @@ function runPLD(minFlimflams = 10) {
     retrieveItem(5, $item`hobo nickel`);
 
     sideZoneLoop($location`The Purple Light District`, false, Macro.abort(), () => {
-        let lastEncounter = get('lastEncounter');
+        const lastEncounter = get('lastEncounter');
         if (lastEncounter.includes('Getting Clubbed') || lastEncounter.includes('Exclusive!')) {
             img = /purplelightdistrict(\d+).gif/.exec(visitUrl("clan_hobopolis.php?place=8"));
 
@@ -425,7 +432,7 @@ function runPLD(minFlimflams = 10) {
 
             else if (get('choiceAdventure223') === 1 &&
                 flimflams < minFlimflams &&
-                img != null && parseInt(img[1]) >= 8) {
+                img != null && parseInt(img[1]) >= 9) {
 
                 print('Switching to get flimflams.', 'purple');
                 set('choiceAdventure223', 3); // Getting Clubbed; Try to flimflam the crowd
@@ -463,28 +470,34 @@ function runBB(tiresAlreadyStacked = 0, stack1 = -1, stack2 = -1) {
     interface something {
         [key: number]: number
     }
-    let stackKills: something = { 1: 0, 2: 0 };
+    const stackKills: something = { 1: 0, 2: 0 };
     let tiresToThrow = 34;
 
     //TODO: handle if we specified stack sizes but haven't thrown violent?
-    if (tirevalanches === 1) {
+    if (tirevalanches >= 1) {
         stackKills[1] = tiresToKills(stack1);
     }
     if (tirevalanches > 1) { // if we have more than 2, you're on your own?
         stackKills[2] = tiresToKills(stack2);
-    };
+    }
+    print('tirevalanches: ' + tirevalanches, 'red');
+    print(`Stack1Kills: ${stackKills[1]} Stack2Kills: ${stackKills[2]}`, 'red');
 
-    let ensureHotRes = () => {
+    if (tiresAlreadyStacked >= tiresToThrow) {
+        setProperty('choiceAdventure206', '1'); // Getting Tired; Toss the tire on the fire violently
+    }
+
+    const ensureHotRes = () => {
         ensurePotionEffect($effect`Oiled-Up`, $item`pec oil`);
         ensurePotionEffect($effect`Spiro Gyro`, $item`programmable turtle`);
         ensurePotionEffect($effect`Ancient Protected`, $item`Ancient Protector soda`);
         ensurePotionEffect($effect`Frost Tea`, $item`cuppa Frost tea`);
-    }
+    };
 
     ensureHotRes();
 
     sideZoneLoop($location`Burnbarrel Blvd.`, true, MACRO_KILL, function() {
-        let lastEncounter = getProperty('lastEncounter');
+        const lastEncounter = getProperty('lastEncounter');
         if (lastEncounter.includes('Getting Tired')) {
             if (getPropertyInt('choiceAdventure206') === 1) {
                 tirevalanches++;
@@ -504,13 +517,13 @@ function runBB(tiresAlreadyStacked = 0, stack1 = -1, stack2 = -1) {
 
         if (stackKills[2] > 0) {
             print(`Stack1Kills: ${stackKills[1]} Stack2Kills: ${stackKills[2]}`, 'red');
-            let hobosLeft = 500 - (stackKills[2] + stackKills[1] + kills);
+            const hobosLeft = 500 - (stackKills[2] + stackKills[1] + kills);
             let tiresNeeded = 0;
             print('Hobos left: ' + hobosLeft + ' tiresNeeded: ' + tiresNeeded);
             while ((hobosLeft + tiresToKills(tiresNeeded)) < 500) {
                 tiresNeeded++;
             }
-            print('Updated tires needed to finish: ' + tiresNeeded, 'red')
+            print(`Kills: ${kills} Updated tires needed to finish: ${tiresNeeded}`, 'red');
             tiresToThrow = tiresNeeded;
         }
 
@@ -525,19 +538,20 @@ function runBB(tiresAlreadyStacked = 0, stack1 = -1, stack2 = -1) {
 
         ensureHotRes();
         return false;
-    })
+    });
 
-    print(`Done in BB. Tires on the stack: ` + tireCount, 'red');
+    print(`Done in BB. Tires on the stack: ${tireCount}`, 'red');
 }
 
-export function main(input: String) {
+export function main(input: string): void {
     setAutoAttack(0);
-    cliExecute("mood hobo");
-    cliExecute("ccs hobo");
+    cliExecute('mood hobo');
+    cliExecute('ccs hobo');
     cliExecute('boombox food');
     cliExecute('mcd 0');
+    useSkill($skill`Spirit of Nothing`); // Don't be an idiot
 
-    let actions = input.split(' ');
+    const actions = input.split(' ');
 
     switch (actions[0]) {
         case 'sewer':
@@ -551,18 +565,18 @@ export function main(input: String) {
             runTheHeap();
             break;
         case 'ahbg':
-            runAHBG(parseInt(actions[1]));
+            runAHBG(actions[1] ? parseInt(actions[1]) : 0);
             break;
         case 'pld':
             runPLD();
             break;
         case 'bb':
-            let numTires = actions[1] ? parseInt(actions[1]) : 0;
-            let stack1Count = actions[2] ? parseInt(actions[2]) : -1;
-            runBB(numTires, stack1Count);
+            const numTires = actions[1] ? parseInt(actions[1]) : 0;
+            const stack1Count = actions[2] ? parseInt(actions[2]) : -1;
+            const stack2Count = actions[3] ? parseInt(actions[3]) : -1;
+            runBB(numTires, stack1Count, stack2Count);
             break;
         default:
             abort('no option passed');
-            break;
     }
 }

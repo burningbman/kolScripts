@@ -1,5 +1,5 @@
 import { get, $item, have, Macro, $skill } from 'libram';
-import { use, visitUrl, runChoice, cliExecute, wait, isUnrestricted, setAutoAttack, myName, print } from 'kolmafia';
+import { use, visitUrl, runChoice, cliExecute, wait, isUnrestricted, setAutoAttack, myName, print, myMaxhp, restoreHp, putShop, availableAmount } from 'kolmafia';
 import { setClan } from './lib';
 
 function shuffleArray(array: any[]) {
@@ -9,7 +9,7 @@ function shuffleArray(array: any[]) {
     }
 }
 
-export function main() {
+export function main(): void {
     if (myName().toLowerCase() !== 'burningbman') {
         return;
     }
@@ -19,6 +19,7 @@ export function main() {
     }
 
     if (!get('_glitchItemImplemented') && have($item`glitch season reward name`)) {
+        restoreHp(myMaxhp());
         cliExecute('ccs garbo');
         Macro.skill($skill`saucegeyser`).repeat().setAutoAttack();
         use($item`glitch season reward name`);
@@ -38,22 +39,22 @@ export function main() {
     if (get('kingLiberated')) {
         // Saber Fam Weight upgrade
         if (get('_saberMod') === 0) {
-            visitUrl("main.php?action=may4");
+            visitUrl('main.php?action=may4');
             runChoice(4);
         }
 
         // Cargo Shorts
         if (!get('_cargoPocketEmptied')) {
-            let deskBellPockets = [517, 590, 653, 553, 587];
+            const deskBellPockets = [517, 590, 653, 553, 587];
             shuffleArray(deskBellPockets);
 
-            let emptiedPockets = get('cargoPocketsEmptied');
-            let pocket = deskBellPockets.find(pocketNum => {
+            const emptiedPockets = get('cargoPocketsEmptied');
+            const pocket = deskBellPockets.find(pocketNum => {
                 if (typeof (emptiedPockets) === 'number') {
                     return emptiedPockets !== pocketNum;
                 }
 
-                return !emptiedPockets.includes(pocketNum.toString())
+                return !emptiedPockets.includes(pocketNum.toString());
             });
             if (pocket) {
                 cliExecute(`cargo ${pocket}`);
@@ -62,15 +63,15 @@ export function main() {
 
         // Boxing Daycare
         if (get('_daycareGymScavenges') === 0) {
-            visitUrl("place.php?whichplace=town_wrong&action=townwrong_boxingdaycare");
-            let choices = [
+            visitUrl('place.php?whichplace=town_wrong&action=townwrong_boxingdaycare');
+            const choices = [
                 3, // enter daycare
                 2, // scavenge
                 1, // recruit toddlers
                 4, // spar
                 5, // return to lobby
                 4, // leave daycare
-            ]
+            ];
             choices.forEach((c) => runChoice(c));
         }
     }
@@ -81,6 +82,12 @@ export function main() {
         cliExecute('ccs garbo');
         Macro.skill($skill`saucegeyser`).repeat().setAutoAttack();
         cliExecute('breakfast');
+        cliExecute('bb_goShopping');
         setAutoAttack(0);
+
+        if (get('kingLiberated')) {
+            putShop(6900, 0, availableAmount($item`battery (AAA)`), $item`battery (AAA)`);
+            putShop(49996, 0, availableAmount($item`pocket wish`), $item`pocket wish`);
+        }
     }
 }
