@@ -1,23 +1,58 @@
-import { useFamiliar, setProperty, getProperty, abort, visitUrl, print, equip, combatRateModifier, myHp, restoreHp, myName, myMp, eat, retrieveItem, myAdventures, setAutoAttack, cliExecute, runChoice, myMaxhp, userConfirm, availableAmount, closetAmount, putCloset, equippedItem, itemAmount, haveEffect, useSkill } from 'kolmafia';
+import { useFamiliar, setProperty, getProperty, abort, visitUrl, print, equip, combatRateModifier, myHp, restoreHp, myName, myMp, eat, retrieveItem, myAdventures, setAutoAttack, cliExecute, myMaxhp, userConfirm, putCloset, equippedItem, itemAmount, haveEffect, useSkill, adv1, takeCloset, outfit, maximize, myInebriety, inebrietyLimit, myFamiliar, availableAmount } from 'kolmafia';
 
-import { ensureEffect, shrug, adventureHere, getPropertyInt, getPropertyIntInit, incrementProperty, setPropertyInt, setChoice, sausageFightGuaranteed, lastAdventureText, ensurePotionEffect } from './lib';
+import { ensureEffect, shrug, getPropertyInt, getPropertyIntInit, incrementProperty, setPropertyInt, setChoice, sausageFightGuaranteed, lastAdventureText, ensurePotionEffect, setClan, inSemirareWindow } from './lib';
 
-import { $familiar, $location, $item, $slot, $effect, Macro, $items, get, adventureMacro, $skill, set } from 'libram';
+import { $familiar, $location, $item, $slot, $effect, Macro, $items, get, $skill, set } from 'libram';
 
 const MACRO_KILL = Macro.skill($skill`saucegeyser`).repeat();
+const SR_LOCATIONS = [$location`Burnbarrel Blvd.`, $location`Exposure Esplanade`, $location`The Ancient Hobo Burial Ground`, $location`The Purple Light District`];
 
 const TRASH_PROP = '_BobSanders.TrashCount';
+const DANCE_PROP = '_bb_hobo.DanceCount';
 
-type scoboParts = {
-    boots: number;
-    eyes: number;
-    guts: number;
-    skulls: number;
-    crotches: number;
-    skins: number;
+enum Part {
+    boots = 1,
+    eyes = 2,
+    guts = 3,
+    skulls = 4,
+    crotches = 5,
+    skins = 6,
+    none = 7
 }
 
-export function getRichardCounts(): scoboParts {
+const PART_ORDER = [Part.boots, Part.eyes, Part.guts, Part.skulls, Part.crotches, Part.skins];
+
+const partToSkill = {
+    [Part.boots]: $skill`Spirit of Cayenne`,
+    [Part.eyes]: $skill`Spirit of Peppermint`,
+    [Part.guts]: $skill`Spirit of Garlic`,
+    [Part.skulls]: $skill`Spirit of Wormwood`,
+    [Part.crotches]: $skill`Spirit of Bacon Grease`,
+    [Part.skins]: $skill`Spirit of Nothing`,
+    [Part.none]: $skill`Spirit of Nothing`
+};
+
+type scoboParts = {
+    [Part.boots]: number;
+    [Part.eyes]: number;
+    [Part.guts]: number;
+    [Part.skulls]: number;
+    [Part.crotches]: number;
+    [Part.skins]: number;
+    [Part.none]: number
+}
+
+const setFamiliar = (): void => {
+    if (myFamiliar() === $familiar`Stooper` && myInebriety() >= inebrietyLimit()) return;
+
+    // set snapper to track hobos
+    useFamiliar($familiar`Red-Nosed Snapper`);
+    if (get('redSnapperPhylum') !== 'hobo') {
+        visitUrl('familiar.php?action=guideme&pwd'); visitUrl('choice.php?pwd&whichchoice=1396&option=1&cat=hobo');
+    }
+};
+
+const getRichardCounts = (): scoboParts => {
     const richard = visitUrl('clan_hobopolis.php?place=3&action=talkrichard&whichtalk=3');
     //TODO: account for commas in the number
     const bootsMatch = richard.match('Richard has <b>(\\d+)</b> pairs? of charred hobo');
@@ -33,44 +68,43 @@ export function getRichardCounts(): scoboParts {
     const skinsMatch = richard.match('Richard has <b>(\\d+)</b> hobo skin');
     const skins = (skinsMatch !== null) ? parseInt(skinsMatch[1]) : 0;
 
-    print('Boots ' + boots, 'red');
-    print('Eyes ' + eyes, 'blue');
-    print('Guts ' + guts, 'green');
-    print('Skulls ' + skulls, 'gray');
-    print('Crotches ' + crotches, 'purple');
-    print('Skins ' + skins);
-
     return {
-        boots: boots,
-        eyes: eyes,
-        guts: guts,
-        skulls: skulls,
-        crotches: crotches,
-        skins: skins
+        [Part.boots]: boots,
+        [Part.eyes]: eyes,
+        [Part.guts]: guts,
+        [Part.skulls]: skulls,
+        [Part.crotches]: crotches,
+        [Part.skins]: skins,
+        [Part.none]: -1
     };
-}
+};
+
+const upkeepHpAndMp = () => {
+    if (myMp() < 100)
+        eat($item`magical sausage`);
+    if (myHp() < myMaxhp())
+        restoreHp(myMaxhp());
+};
 
 function fightSausageIfGuaranteed() {
     if (sausageFightGuaranteed()) {
         print('Fighting a Kramco in the Noob Cave');
         const currentOffhand = equippedItem($slot`off-hand`);
         equip($item`Kramco Sausage-o-Matic™`);
-        adventureMacro($location`Noob Cave`, Macro.skill($skill`saucegeyser`));
+        adv1($location`Noob Cave`, -1, '');
 
         //Equip whatever we had here
         equip(currentOffhand);
     }
 }
 
-const getSneakyForHobos = (sewers = false, bb = false): void => {
-    useFamiliar($familiar`Shorter-Order Cook`);
-    equip($slot`familiar`, $item`blue plate`);
+const getSneakyForHobos = (sewers = false, useJeans = false): void => {
     equip($item`Xiblaxian stealth cowl`);
     equip($item`chalk chlamys`);
     equip($slot`shirt`, $item`camouflage T-shirt`);
     sewers ? equip($item`gatorskin umbrella`) : equip($item`rusted-out shootin' iron`);
     sewers ? equip($item`hobo code binder`) : equip($item`familiar scrapbook`);
-    bb ? equip($item`Jeans of Loathing`) : equip($item`Xiblaxian stealth trouser`);
+    useJeans ? equip($item`Jeans of Loathing`) : equip($item`Xiblaxian stealth trouser`);
     equip($slot`acc1`, $item`lucky gold ring`);
     equip($slot`acc2`, $item`mafia thumb ring`);
     equip($slot`acc3`, $item`Mr. Cheeng's spectacles`);
@@ -86,14 +120,13 @@ const getSneakyForHobos = (sewers = false, bb = false): void => {
         ensureEffect($effect`Invisible Avatar`);
     }
 
-    const desiredNonCombat = bb ? -26 : -27;
+    const desiredNonCombat = useJeans || sewers ? -26 : -27;
     if (combatRateModifier() > desiredNonCombat) {
         abort('Not sneaky enough.');
     }
 };
 
-export function getConfrontationalForHobos() {
-    useFamiliar($familiar`Jumpsuited Hound Dog`);
+const getConfrontationalForHobos = () => {
     equip($item`fiberglass fedora`);
     equip($item`Misty Cloak`);
     equip($slot`shirt`, $item`"Remember the Trees" Shirt`);
@@ -110,9 +143,9 @@ export function getConfrontationalForHobos() {
 
     if (combatRateModifier() < 25)
         abort('Not confrontational enough.');
-}
+};
 
-export function getHoboCountsRe(regex: RegExp): number {
+const getHoboCountsRe = function(regex: RegExp): number {
     const logs = visitUrl('clan_raidlogs.php').replace(/a tirevalanch/gm, '1 tirevalanch');//TODO: maybe look for "(x turn"
     let match;
     let total = 0;
@@ -126,7 +159,7 @@ export function getHoboCountsRe(regex: RegExp): number {
         }
 
     return total;
-}
+};
 
 function calculateGratesAndValues(): { grates: number, valves: number } {
     let grateCount = 0;
@@ -135,7 +168,7 @@ function calculateGratesAndValues(): { grates: number, valves: number } {
     const raidLogs = visitUrl('clan_raidlogs.php').split('<br>');
 
     raidLogs.forEach(function(raidLog: string) {
-        const grateCheck = raidLog.match(/(grate.*\()(\d*).*/)
+        const grateCheck = raidLog.match(/(grate.*\()(\d*).*/);
         if (grateCheck) {
             grateCount += parseInt(grateCheck[2]);
             return;
@@ -150,38 +183,49 @@ function calculateGratesAndValues(): { grates: number, valves: number } {
     return {
         grates: grateCount,
         valves: valveCount
-    }
+    };
 }
 
 function throughSewers() {
     return visitUrl('clan_hobopolis.php').includes('clan_hobopolis.php?place=2');
 }
 
-export function getSewerItems() {
+const getSewerItems = () => {
     return (
         !$items`unfortunate dumplings, sewer wad, bottle of ooze-o, gatorskin umbrella`.some(i => !retrieveItem(1, i)) &&
         retrieveItem(3, $item`oil of oiliness`)
     );
-}
+};
 
 function runSewer() {
     print('Starting sewers.', 'blue');
     let checkGravesAndValues = true;
 
+    Macro.step('pickpocket')
+        .trySkill($skill`Shattering Punch`)
+        .trySkill($skill`Feel Hatred`)
+        .trySkill($skill`Snokebomb`)
+        .trySkill($skill`Use the force`)
+        .trySkill($skill`Chest X-Ray`)
+        .trySkill($skill`Reflex Hammer`)
+        .item([$item`green smoke bomb`, $item`green smoke bomb`]).setAutoAttack();
+
     while (!throughSewers()) {
+        upkeepHpAndMp();
+
         if (checkGravesAndValues) {
             const sewerStatus = calculateGratesAndValues();
 
             if (sewerStatus.grates < 20) {
-                set("choiceAdventure198", 3);
+                set('choiceAdventure198', 3);
             } else {
-                set("choiceAdventure198", 1);
+                set('choiceAdventure198', 1);
             }
 
             if (sewerStatus.valves < 20) {
-                set("choiceAdventure197", 3);
+                set('choiceAdventure197', 3);
             } else {
-                set("choiceAdventure197", 1);
+                set('choiceAdventure197', 1);
             }
 
             checkGravesAndValues = sewerStatus.grates < 20 && sewerStatus.valves < 20;
@@ -200,19 +244,11 @@ function runSewer() {
             else if (get('_chestXRayUsed') < 3 || get('_reflexHammerUsed') < 3) {
                 equip($slot`acc3`, $item`Lil' Doctor™ bag`);
             } else {
-                retrieveItem(10, $item`tattered scrap of paper`);
+                retrieveItem(4, $item`green smoke bomb`);
             }
         }
 
-        adventureMacro($location`A Maze of Sewer Tunnels`, Macro.step('pickpocket')
-            .trySkill($skill`Shattering Punch`)
-            .trySkill($skill`Feel Hatred`)
-            .trySkill($skill`Snokebomb`)
-            .trySkill($skill`Use the force`)
-            .trySkill($skill`Chest X-Ray`)
-            .trySkill($skill`Reflex Hammer`)
-            .item([$item`tattered scrap of paper`, $item`tattered scrap of paper`]).repeat()
-        );
+        adv1($location`A Maze of Sewer Tunnels`, -1, '');
     }
 
     const sewerStatus = calculateGratesAndValues();
@@ -220,33 +256,43 @@ function runSewer() {
     print('Through the sewers.', 'green');
 }
 
-function sideZoneLoop(location: Location, sneaky: boolean, macro: Macro, callback: Function) {
+function sideZoneLoop(location: Location, sneaky: boolean, macro: Macro, callback: () => boolean) {
     let shouldBreak = false;
-    sneaky ? getSneakyForHobos(false, location === $location`Burnbarrel Blvd.`) : getConfrontationalForHobos();
+    const upkeepCombat = () => {
+        if (location !== $location`Hobopolis Town Square`) {
+            sneaky ? getSneakyForHobos(false, location === $location`Burnbarrel Blvd.` || location === $location`Exposure Esplanade`) : getConfrontationalForHobos();
+        }
+    };
+
+    macro.setAutoAttack();
+
+    const handleNickels = () => {
+        // closet all hobo nickels so LGR doesn't grab them
+        if (!inSemirareWindow() || SR_LOCATIONS.includes(location))
+            putCloset(itemAmount($item`hobo nickel`), $item`hobo nickel`);
+        else if (availableAmount($item`hobo nickel`) < 5)
+            takeCloset(5 - availableAmount($item`hobo nickel`), $item`hobo nickel`);
+    };
+
+    handleNickels();
 
     while (!shouldBreak && myAdventures() !== 0) {
-        if (myMp() < 100)
-            eat($item`magical sausage`);
-        if (myHp() < myMaxhp())
-            restoreHp(myMaxhp());
+        upkeepCombat();
+        upkeepHpAndMp();
 
         fightSausageIfGuaranteed();
 
-        adventureMacro(location, macro);
+        adv1(location, -1, '');
 
         if (haveEffect($effect`Beaten Up`)) {
             abort('Got beaten up. Something is wrong.');
         }
 
-        // closet all hobo nickels so LGR doesn't grab them
-        putCloset(itemAmount($item`hobo nickel`), $item`hobo nickel`);
-
+        handleNickels(); // handle nickels before callback so TS can uncloset 20 nickels if needed
         shouldBreak = callback();
     }
-
-    if (myAdventures() === 0) {
-        print('No more adventures', 'red');
-    }
+    setAutoAttack(0);
+    if (myAdventures() === 0) print('No more adventures', 'red');
 }
 
 const MAX_DIVERTS = 21;
@@ -260,33 +306,33 @@ function runEE(totalIcicles = 50) {
     // TODO: update icicles and diverts each loop
     let icicles = getHoboCountsRe(/water pipes \((\d+) turns?\)/gm);
     let diverts = getHoboCountsRe(/cold water out of Exposure Esplanade \((\d+) turns?\)/gm);
-    const bigYodelDone = getHoboCountsRe(new RegExp('\>' + myName() + ' \(\#\d*\) yodeled like crazy \\((\\d+) turns?\\)', 'gm')) > 0;
+    const bigYodelDone = getHoboCountsRe(new RegExp('>' + myName() + ' (#d*) yodeled like crazy \\((\\d+) turns?\\)', 'gm')) > 0;
 
     if (bigYodelDone) {
-        print("Big yodel already done in EE. Looking elsewhere.", "blue");
+        print('Big yodel already done in EE. Looking elsewhere.', 'blue');
         return;
     }
 
     // do diverts first unless they are already done
-    if (diverts < MAX_DIVERTS)
+    if (diverts <= MAX_DIVERTS)
         setProperty('choiceAdventure215', '2'); // Piping Cold; Divert
     else
         setProperty('choiceAdventure215', '3'); // Piping Cold; Go all CLUE on the third Pipe
 
-    if (icicles > totalIcicles) {
-        print("Desired icicle account achieved. Looking for big yodel.", "blue");
+    if (icicles >= totalIcicles) {
+        print('Desired icicle account achieved. Looking for big yodel.', 'blue');
         setProperty('choiceAdventure217', '3'); // There Goes Fritz!; Yodel your heart out
     }
 
     print(`Current status - diverts: ${diverts} icicles: ${icicles} targeted icicles: ${totalIcicles}`);
-    print("Starting EE", "blue");
+    print('Starting EE', 'blue');
 
     sideZoneLoop($location`Exposure Esplanade`, true, MACRO_KILL, function() {
         let done = false;
         if (getProperty('lastEncounter').includes('Piping Cold')) {
             if (getPropertyInt('choiceAdventure215') === 3) { // Piping Cold; Go all CLUE on the third Pipe
                 icicles++;
-                if (icicles > totalIcicles) {
+                if (icicles >= totalIcicles) {
                     setProperty('choiceAdventure217', '3'); // There Goes Fritz!; Yodel your heart out
                 }
             }
@@ -298,23 +344,23 @@ function runEE(totalIcicles = 50) {
                 }
             }
 
-            print("Icicle count: " + icicles + ' Diverts: ' + diverts, 'blue');
+            print('Icicle count: ' + icicles + ' Diverts: ' + diverts, 'blue');
         }
 
         if (getProperty('lastEncounter').includes('There Goes Fritz!') && getPropertyInt('choiceAdventure217') === 3) {
-            print("Big yodel done.", "blue");
+            print('Big yodel done.', 'blue');
             done = true;
         }
 
         if (getProperty('lastEncounter').includes('Bumpity Bump Bump')) {
-            print("Frosty is up.", "blue");
+            print('Frosty is up.', 'blue');
             done = true;
         }
 
         return done;
     });
 
-    print("Done in EE", "blue");
+    print('Done in EE', 'blue');
 }
 
 function runTheHeap(playingWithOthers = true) {
@@ -333,28 +379,29 @@ function runTheHeap(playingWithOthers = true) {
     else
         setProperty('choiceAdventure218', '1'); // I Refuse; Explore the junkpile
 
-    print("Starting Heap", "green");
+    print('Starting Heap', 'green');
 
     sideZoneLoop($location`The Heap`, true, MACRO_KILL, function() {
+        const atOscus = getProperty('lastEncounter').includes('Deep Enough to Dive');
         if (getProperty('lastEncounter').includes('You vs. The Volcano')) {
             incrementProperty(TRASH_PROP);//TODO: replace with myName()
             if (getPropertyInt(TRASH_PROP) >= 5) {
                 setProperty('choiceAdventure216', '1'); // The Compostal Service; Be Green
             }
         }
-        if (getPropertyInt(TRASH_PROP) >= 5 && getProperty('lastEncounter').includes('The Compostal Service')) {
+        else if (getPropertyInt(TRASH_PROP) >= 5 && getProperty('lastEncounter').includes('The Compostal Service')) {
             setProperty('choiceAdventure216', '2'); // The Compostal Service; Begone'
             setPropertyInt(TRASH_PROP, 0);
         }
 
-        if (getProperty('lastEncounter').includes('Deep Enough to Dive')) {
-            print("Oscus is up.", "green");
+        else if (atOscus) {
+            print('Oscus is up.', 'green');
         }
 
-        return getProperty('lastEncounter').includes('Deep Enough to Dive');
+        return atOscus;
     });
 
-    print("Done in Heap", "green");
+    print('Done in Heap', 'green');
 }
 
 function runAHBG(danceCount = 0) {
@@ -365,44 +412,50 @@ function runAHBG(danceCount = 0) {
     setProperty('choiceAdventure222', '1'); // A Chiller Night (2); Dance with them
     setProperty('choiceAdventure204', '2'); // Skip adventure when Zombo is up
 
+    // if danceCount not passed, check the property
+    if (danceCount === 0) {
+        danceCount = get(DANCE_PROP, 0);
+    }
+
     if (danceCount >= 5) {
         setProperty('choiceAdventure208', '1'); // Ah, So That's Where They've All Gone; Send the flowers to The Heap
     }
 
-    getSneakyForHobos();
     retrieveItem(500, $item`New Age healing crystal`);
-    sideZoneLoop($location`The Ancient Hobo Burial Ground`, true, Macro.item([$item`New Age healing crystal`, $item`New Age hurting crystal`]), function() {
+    sideZoneLoop($location`The Ancient Hobo Burial Ground`, true, Macro.item([$item`New Age healing crystal`, $item`New Age hurting crystal`]).repeat(), function() {
         let done = false;
-        if (getProperty('lastEncounter').includes('A Chiller Night')) {
+        const lastEncounter = getProperty('lastEncounter');
+        if (lastEncounter.includes('A Chiller Night')) {
             danceCount++;
             if (danceCount >= 5) {
                 setProperty('choiceAdventure208', '1'); // Ah, So That's Where They've All Gone; Send the flowers to The Heap
             }
         }
-        if (danceCount >= 5 && getProperty('lastEncounter').includes('Ah, So That\'s Where They\'ve All Gone')) {
+        else if (danceCount >= 5 && lastEncounter.includes('Ah, So That\'s Where They\'ve All Gone')) {
             setProperty('choiceAdventure208', '2'); // Ah, So That's Where They've All Gone; Tiptoe through the tulips
             danceCount = 0;
         }
-        if (getProperty('lastEncounter').includes('Welcome To You!')) {
+        else if (lastEncounter.includes('Welcome To You!')) {
             print('Zombo is up', 'blue');
             done = true;
         }
         print('Dance count: ' + danceCount, 'blue');
+        set(DANCE_PROP, danceCount);
         return done;
     });
     print('Done in AHBG', 'blue');
 }
 
-function runPLD(minFlimflams = 10) {
+function runPLD(maxFlimFlams = 10) {
     const diverts = getHoboCountsRe(/cold water out of Exposure Esplanade \((\d+) turns?\)/gm);
     if (diverts < 21) {
         if (!userConfirm('Do AHBG before 21 water diverts?', 10000, false)) return;
     }
 
-    let img = /purplelightdistrict(\d+).gif/.exec(visitUrl("clan_hobopolis.php?place=8"));
+    let img = /purplelightdistrict(\d+).gif/.exec(visitUrl('clan_hobopolis.php?place=8'));
     let flimflams = getHoboCountsRe(/flimflammed some hobos \((\d+) turns?\)/gm);
 
-    if ((diverts + flimflams) >= 21) {
+    if ((diverts + flimflams) >= 21 && img != null && parseInt(img[1]) < 9 && flimflams < maxFlimFlams) {
         print('Starting barfights.', 'purple');
         setProperty('choiceAdventure223', '1'); // Getting Clubbed; Try to get inside
     }
@@ -411,27 +464,28 @@ function runPLD(minFlimflams = 10) {
         setProperty('choiceAdventure223', '3'); // Getting Clubbed; Try to flimflam the crowd
     }
 
-    setProperty('choiceAdventure224', '2'); // Exclusive!; Pick several fights
-    setProperty('choiceAdventure294', '1'); // Maybe It's a Sexy Snake! Take a Chance?
+    set('choiceAdventure224', 2); // Exclusive!; Pick several fights
+    set('choiceAdventure294', 1); // Maybe It's a Sexy Snake! Take a Chance?
+    set('choiceAdventure205', 2); // Don't fight Chester
 
-    retrieveItem(5, $item`hobo nickel`);
-
-    sideZoneLoop($location`The Purple Light District`, false, Macro.abort(), () => {
+    sideZoneLoop($location`The Purple Light District`, false, MACRO_KILL, () => {
         const lastEncounter = get('lastEncounter');
+        let done = false;
+
         if (lastEncounter.includes('Getting Clubbed') || lastEncounter.includes('Exclusive!')) {
-            img = /purplelightdistrict(\d+).gif/.exec(visitUrl("clan_hobopolis.php?place=8"));
+            img = /purplelightdistrict(\d+).gif/.exec(visitUrl('clan_hobopolis.php?place=8'));
 
             if (get('choiceAdventure223') === 3) { // Flimflamming the crowd
                 flimflams++;
 
-                if (flimflams >= minFlimflams) {
+                if (flimflams >= maxFlimFlams) {
                     print('Switching to barfights.', 'purple');
                     set('choiceAdventure223', 1); // Getting Clubbed; Try to get inside
                 }
             }
 
             else if (get('choiceAdventure223') === 1 &&
-                flimflams < minFlimflams &&
+                flimflams < maxFlimFlams &&
                 img != null && parseInt(img[1]) >= 9) {
 
                 print('Switching to get flimflams.', 'purple');
@@ -439,20 +493,24 @@ function runPLD(minFlimflams = 10) {
             }
         }
 
-        // always be ready for the lewd playing card
-        retrieveItem(5, $item`hobo nickel`);
+        else if (lastEncounter.match(/Van, Damn/)) {
+            print('Chester is up.', 'purple');
+            done = true;
+        }
+
+        return done;
     });
 
     print(`Done in PLD. At ${getHoboCountsRe(/flimflammed some hobos \((\d+) turns?\)/gm)} flimflams.`, 'purple');
 }
 
 function lastAdventureWasSuccessfulCombat(): boolean {
-    return lastAdventureText().includes(myName() + ' wins the fight!')
+    return lastAdventureText().includes(myName() + ' wins the fight!');
 }
 
 function tiresToKills(tires: number): number {
     if (tires === -1) tires = 35;
-    return (tires ^ 2 * 0.1) + (0.7 * tires);
+    return (tires * tires * 0.1) + (0.7 * tires);
 }
 
 function runBB(tiresAlreadyStacked = 0, stack1 = -1, stack2 = -1) {
@@ -502,28 +560,24 @@ function runBB(tiresAlreadyStacked = 0, stack1 = -1, stack2 = -1) {
             if (getPropertyInt('choiceAdventure206') === 1) {
                 tirevalanches++;
                 stackKills[tirevalanches] = tiresToKills(tireCount + 1);
-                print(`Stack1Kills: ${stackKills[1]} Stack2Kills: ${stackKills[2]}`, 'red');
                 setProperty('choiceAdventure206', '2'); // Getting Tired; Toss the tire on the fire gently
                 tireCount = 0;
             } else {
                 tireCount++;
-                print(`Tires on the stack: ` + tireCount, 'red');
+                print('Tires on the stack: ' + tireCount, 'red');
                 if (tireCount >= tiresToThrow) {
-                    print(`Going to throw violently.`, 'red');
+                    print('Going to throw violently.', 'red');
                     setProperty('choiceAdventure206', '1'); // Getting Tired; Toss the tire on the fire violently
                 }
             }
         }
 
         if (stackKills[2] > 0) {
-            print(`Stack1Kills: ${stackKills[1]} Stack2Kills: ${stackKills[2]}`, 'red');
             const hobosLeft = 500 - (stackKills[2] + stackKills[1] + kills);
             let tiresNeeded = 0;
-            print('Hobos left: ' + hobosLeft + ' tiresNeeded: ' + tiresNeeded);
             while ((hobosLeft + tiresToKills(tiresNeeded)) < 500) {
                 tiresNeeded++;
             }
-            print(`Kills: ${kills} Updated tires needed to finish: ${tiresNeeded}`, 'red');
             tiresToThrow = tiresNeeded;
         }
 
@@ -543,6 +597,114 @@ function runBB(tiresAlreadyStacked = 0, stack1 = -1, stack2 = -1) {
     print(`Done in BB. Tires on the stack: ${tireCount}`, 'red');
 }
 
+const getNeededPart = (parts: scoboParts, desiredCount: number): Part => {
+    let desiredPart = Part.none;
+    for (const part of PART_ORDER) {
+        if (parts[part] < desiredCount) {
+            desiredPart = part;
+            break;
+        }
+    }
+
+    print(`Needed part is ${Part[desiredPart]}. Have ${parts[desiredPart]} Need ${desiredCount}`, 'blue');
+    useSkill(partToSkill[desiredPart]);
+    return desiredPart;
+};
+
+type tsArg = { getFood: boolean, input: string, hoboKills: number | undefined }
+
+const runTS = ({ getFood = false, input = 'untuned', hoboKills }: tsArg): void => {
+    let part: Part;
+    let stopAfterFood: boolean;
+    let macro = Macro.skill($skill`Stuffed Mortar Shell`, $skill`Entangling Noodles`);
+    let parts = getRichardCounts();
+    const getSpecificParts = input !== 'untuned';
+    if (getFood) print('Looking for food in hobopolis.', 'blue');
+    if (!getSpecificParts) {
+        if (hoboKills) print(`Generating random parts for ${hoboKills} turns.`, 'blue');
+        else print('Generating random parts until out of adventures.', 'blue');
+    }
+    else print(`Generating up to ${hoboKills} of each hobo part.`, 'blue');
+
+    outfit('hobo_ts');
+
+    if (!getSpecificParts) {
+        useSkill($skill`Spirit of Nothing`);
+    } else if (hoboKills) {
+        part = getNeededPart(parts, hoboKills);
+        if (part === Part.none) { print('Done getting parts (except maybe skins)', 'blue'); return; }
+        if (part === Part.skins) {
+            const skinsLeft = hoboKills - parts[part];
+            while (haveEffect($effect`Carol of the Bulls`) < skinsLeft) {
+                if (myMp() < 130) eat($item`magical sausage`);
+                ensureEffect($effect`Carol of the Bulls`, skinsLeft);
+                ensureEffect($effect`Song of the North`, skinsLeft);
+            }
+            ensureEffect($effect`Confidence of the Votive`, skinsLeft);
+            ensureEffect($effect`Baconstoned`, skinsLeft);
+            macro = Macro.attack().repeat();
+            if (!outfit('hobo_physical')) { print('Can\'t equip physical outfit'); return; }
+        }
+    }
+
+    if (getFood) {
+        stopAfterFood = userConfirm('Stop after getting food?');
+        takeCloset($item`hobo nickel`, 40);
+        equip($item`hobo code binder`);
+
+        setChoice(272, 1); // Enter the Marketplace
+        setChoice(231, 1); // Hobo Marketplace #1; Food Court
+        setChoice(232, 1); // Hobo Marketplace #2; Food Court
+        setChoice(233, 1); // Food Court #1; Food
+        setChoice(234, 1); // Food Court #2; Food
+        setChoice(235, 1); // Food #1; Muscle Booze
+        setChoice(236, 1); // Food #2; Muscle Booze
+        setChoice(237, 1); // Muscle Food; Eat it
+
+        setChoice(240, 1); // Food #1; Muscle Booze
+        setChoice(241, 1); // Food #2; Muscle Booze
+        setChoice(242, 1); // Muscle Booze; Drink it
+    } else {
+        print('Not getting food in hobopolis.', 'blue');
+        setChoice(272, 2); // Leave the Marketplace
+    }
+
+    let hobosKilled = 0;
+    sideZoneLoop($location`Hobopolis Town Square`, true, macro, () => {
+        let done = false;
+        if (getProperty('lastEncounter').includes('Big Merv\'s Protein Shakes')) {
+            // Switch to getting booze
+            setChoice(233, 2); // Food Court #1; Booze
+            setChoice(234, 2); // Food Court #2; Booze
+            print('Got food. Looking for booze.', 'blue');
+        }
+
+        else if (getProperty('lastEncounter').includes('Arthur Finn\'s World-Record Homebrew Stout')) {
+            setChoice(272, 2); // Leave the Marketplace
+            print('Got booze. Ignoring marketplace for now.', 'blue');
+            getFood = false;
+            outfit('hobo_ts');
+            if (stopAfterFood) return true;
+        }
+
+        if (lastAdventureWasSuccessfulCombat()) {
+            hobosKilled++;
+
+            if (getSpecificParts && hoboKills) {
+                parts = getRichardCounts();
+                const oldPart = part;
+                part = getNeededPart(parts, hoboKills);
+                if (part === Part.none) { print('Done getting parts.', 'blue'); done = true; }
+                if (part === Part.skins && oldPart !== Part.skins) { print('Need to get skins. Re-run the script.', 'blue'); done = true; }
+            } else if (hoboKills)
+                done = hobosKilled >= hoboKills;
+        }
+        if (getFood) takeCloset($item`hobo nickel`, 20);
+
+        return done;
+    });
+};
+
 export function main(input: string): void {
     setAutoAttack(0);
     cliExecute('mood hobo');
@@ -550,16 +712,30 @@ export function main(input: string): void {
     cliExecute('boombox food');
     cliExecute('mcd 0');
     useSkill($skill`Spirit of Nothing`); // Don't be an idiot
+    setFamiliar();
 
     const actions = input.split(' ');
 
+    if (haveEffect($effect`Blood Bubble`) < 1.04 * myAdventures()) {
+        maximize('hp', false);
+        useSkill($skill`Cannelloni Cocoon`);
+
+        while (haveEffect($effect`Blood Bubble`) < 1.04 * myAdventures()) {
+            useSkill($skill`Blood Bubble`, Math.floor(myHp() / 30) - 1);
+            useSkill($skill`Cannelloni Cocoon`);
+        }
+    }
+
     switch (actions[0]) {
+        case 'clan':
+            setClan(input.substring('clan '.length));
+            break;
         case 'sewer':
             set(TRASH_PROP, 0);
             runSewer();
             break;
         case 'ee':
-            runEE(parseInt(actions[1]));
+            runEE(actions[1] ? parseInt(actions[1]) : 50);
             break;
         case 'heap':
             runTheHeap();
@@ -570,11 +746,19 @@ export function main(input: string): void {
         case 'pld':
             runPLD();
             break;
-        case 'bb':
+        case 'bb': {
             const numTires = actions[1] ? parseInt(actions[1]) : 0;
             const stack1Count = actions[2] ? parseInt(actions[2]) : -1;
             const stack2Count = actions[3] ? parseInt(actions[3]) : -1;
             runBB(numTires, stack1Count, stack2Count);
+            break;
+        }
+        case 'ts':
+            runTS({
+                getFood: actions[1] === 'true',
+                input: actions[2],
+                hoboKills: actions[3] ? parseInt(actions[3]) : undefined
+            });
             break;
         default:
             abort('no option passed');

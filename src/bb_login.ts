@@ -1,5 +1,5 @@
 import { get, $item, have, Macro, $skill } from 'libram';
-import { use, visitUrl, runChoice, cliExecute, wait, isUnrestricted, setAutoAttack, myName, print, myMaxhp, restoreHp, putShop, availableAmount } from 'kolmafia';
+import { use, visitUrl, runChoice, cliExecute, wait, isUnrestricted, setAutoAttack, myName, print, myMaxhp, restoreHp, putShop, availableAmount, myDaycount } from 'kolmafia';
 import { setClan } from './lib';
 
 function shuffleArray(array: any[]) {
@@ -82,12 +82,12 @@ export function main(): void {
         cliExecute('ccs garbo');
         Macro.skill($skill`saucegeyser`).repeat().setAutoAttack();
         cliExecute('breakfast');
-        cliExecute('bb_goShopping');
         setAutoAttack(0);
 
         if (get('kingLiberated')) {
             putShop(6900, 0, availableAmount($item`battery (AAA)`), $item`battery (AAA)`);
-            putShop(49996, 0, availableAmount($item`pocket wish`), $item`pocket wish`);
+            if (myDaycount() > 1)
+                putShop(49996, 0, availableAmount($item`pocket wish`), $item`pocket wish`);
         }
     }
 }
