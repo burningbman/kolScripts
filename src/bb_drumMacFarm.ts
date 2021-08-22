@@ -10,9 +10,6 @@ let flags = {
 function gearUp(): boolean {
     useFamiliar($familiar`Jumpsuited Hound Dog`);
 
-    // call breakfast cli
-    // put batteries and pocket wishes in mall
-
 
     let drumMacOutfit, drumMacWeakOutfit = false;
     try {

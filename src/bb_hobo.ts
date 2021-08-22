@@ -280,10 +280,10 @@ const MAX_DIVERTS = 21;
 function runEE(totalIcicles = 50) {
     print('Starting EE', 'blue');
     print(`Running EE going for ${totalIcicles} before yodel`, 'blue');
-    set('choiceAdventure273', '1'); // The Frigid Air; Pry open the freezer
-    set('choiceAdventure217', '1'); // There Goes Fritz!; Yodel a little
-    set('choiceAdventure292', '2'); // Cold Comfort; I’ll have the salad. I mean, I’ll leave.
-    set('choiceAdventure202', '2'); // Frosty; Skip adventure
+    set('choiceAdventure273', 1); // The Frigid Air; Pry open the freezer
+    set('choiceAdventure217', 1); // There Goes Fritz!; Yodel a little
+    set('choiceAdventure292', 2); // Cold Comfort; I’ll have the salad. I mean, I’ll leave.
+    set('choiceAdventure202', 2); // Frosty; Skip adventure
 
     const bigYodelDone = getHoboCountsRe(new RegExp('>' + myName() + ' (#d*) yodeled like crazy \\((\\d+) turns?\\)', 'gm')) > 0;
     if (bigYodelDone) { print('Big yodel already done in EE.', 'blue'); return; }
@@ -297,7 +297,7 @@ function runEE(totalIcicles = 50) {
 
     if (icicles >= totalIcicles) {
         print('Desired icicle account achieved. Looking for big yodel.', 'blue');
-        set('choiceAdventure217', '3'); // There Goes Fritz!; Yodel your heart out
+        set('choiceAdventure217', 3); // There Goes Fritz!; Yodel your heart out
     }
 
     print(`Status - Diverts: ${diverts} Icicles: ${icicles}/${totalIcicles}`, 'blue');
@@ -308,13 +308,13 @@ function runEE(totalIcicles = 50) {
             if (get('choiceAdventure215') === 3) { // making icicles
                 icicles++;
                 if (icicles >= totalIcicles) {
-                    get('choiceAdventure217', '3'); // big yodel
+                    set('choiceAdventure217', 3); // big yodel
                 }
             }
             else if (get('choiceAdventure215') === 2) { // diverting
                 diverts++;
                 if (diverts >= MAX_DIVERTS) {
-                    set('choiceAdventure215', '3'); // make icicles
+                    set('choiceAdventure215', 3); // make icicles
                 }
             }
 
@@ -743,4 +743,6 @@ export function main(input: string): void {
 
     setAutoAttack(0);
     if (myAdventures() === 0) print('No more adventures', 'red');
+    print(`${23 - get('_sausagesEaten')} sausages left today.`, 'purple');
+    print(`${11 - get('_freeBeachWalksUsed')} free beach walks left today`, 'orangered');
 }
