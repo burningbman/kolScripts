@@ -98,16 +98,23 @@ function fightSausageIfGuaranteed(): void {
     }
 }
 
-const getSneakyForHobos = (sewers = false, useJeans = false): void => {
+const getSneakyForHobos = ({ sewers = false, useJeans = false, saber = false }): void => {
     equip($item`Xiblaxian stealth cowl`);
     equip($item`chalk chlamys`);
     equip($slot`shirt`, $item`camouflage T-shirt`);
-    sewers ? equip($item`gatorskin umbrella`) : equip($item`rusted-out shootin' iron`);
     sewers ? equip($item`hobo code binder`) : equip($item`familiar scrapbook`);
     useJeans ? equip($item`Jeans of Loathing`) : equip($item`Xiblaxian stealth trousers`);
     equip($slot`acc1`, $item`lucky gold ring`);
     equip($slot`acc2`, $item`mafia thumb ring`);
     equip($slot`acc3`, $item`Mr. Cheeng's spectacles`);
+
+    // handle weapon equipping
+    if (sewers)
+        equip($item`gatorskin umbrella`);
+    else if (saber)
+        equip($item`Fourth of May Cosplay Saber`);
+    else
+        equip($item`rusted-out shootin' iron`);
 
     ensureEffect($effect`Smooth Movements`);
     ensureEffect($effect`The Sonata of Sneakiness`);
@@ -120,7 +127,10 @@ const getSneakyForHobos = (sewers = false, useJeans = false): void => {
         ensureEffect($effect`Invisible Avatar`);
     }
 
-    const desiredNonCombat = useJeans || sewers ? -26 : -27;
+    let desiredNonCombat = -27;
+    if (sewers) desiredNonCombat++;
+    if (useJeans) desiredNonCombat++;
+    if (saber) desiredNonCombat++;
     if (combatRateModifier() > desiredNonCombat) {
         abort('Not sneaky enough.');
     }
@@ -212,7 +222,7 @@ function runSewer() {
 
     while (!throughSewers()) {
         upkeepHpAndMp();
-        getSneakyForHobos(true);
+        getSneakyForHobos({ sewers: true });
         fightSausageIfGuaranteed();
 
         if (!getSewerItems()) throw 'Unable to get sewer items';
@@ -254,8 +264,17 @@ function sideZoneLoop(location: Location, sneaky: boolean, macro: Macro, callbac
     let shouldBreak = false;
     const upkeepCombat = () => {
         if (location !== $location`Hobopolis Town Square`) {
-            const useJeans = [$location`Burnbarrel Blvd.`, $location`Exposure Esplanade`].includes(location);
-            sneaky ? getSneakyForHobos(false, useJeans) : getConfrontationalForHobos();
+            const useJeans = [$location`Burnbarrel Blvd.`, $location`Exposure Esplanade`, $location`The Ancient Hobo Burial Ground`].includes(location);
+
+            if (sneaky) {
+                getSneakyForHobos({
+                    sewers: false,
+                    useJeans,
+                    saber: $location`The Ancient Hobo Burial Ground` === location
+                });
+            }
+            else
+                getConfrontationalForHobos();
         }
     };
 
@@ -394,8 +413,7 @@ function runAHBG(danceCount = 0) {
         setProperty('choiceAdventure208', '1'); // Ah, So That's Where They've All Gone; Send the flowers to The Heap
     }
 
-    retrieveItem(500, $item`New Age healing crystal`);
-    sideZoneLoop($location`The Ancient Hobo Burial Ground`, true, Macro.item([$item`New Age healing crystal`, $item`New Age hurting crystal`]).repeat(), function() {
+    sideZoneLoop($location`The Ancient Hobo Burial Ground`, true, Macro.attack().repeat(), function() {
         let done = false;
         const lastEncounter = getProperty('lastEncounter');
         if (lastEncounter.includes('A Chiller Night')) {
@@ -487,7 +505,7 @@ function tiresToKills(tires: number): number {
 }
 
 function runBB(tiresAlreadyStacked = 0, stack1 = -1, stack2 = -1) {
-    print(`Running BB with ${tiresAlreadyStacked} on the stack, ${stack1} in stack 1 and ${stack2} in stack 2`);
+    print(`Running BB with ${tiresAlreadyStacked} on the stack, ${stack1} in stack 1 and ${stack2} in stack 2`, 'red');
     //TODO: store counts in new property or whatever storage mafia uses.
     //TODO: Real calculation for the last stack.
     setProperty('choiceAdventure206', '2'); // Getting Tired; Toss the tire on the fire gently
@@ -511,8 +529,6 @@ function runBB(tiresAlreadyStacked = 0, stack1 = -1, stack2 = -1) {
     if (tirevalanches > 1) { // if we have more than 2, you're on your own?
         stackKills[2] = tiresToKills(stack2);
     }
-    print('tirevalanches: ' + tirevalanches, 'red');
-    print(`Stack1Kills: ${stackKills[1]} Stack2Kills: ${stackKills[2]}`, 'red');
 
     if (tiresAlreadyStacked >= tiresToThrow) {
         setProperty('choiceAdventure206', '1'); // Getting Tired; Toss the tire on the fire violently
@@ -525,37 +541,44 @@ function runBB(tiresAlreadyStacked = 0, stack1 = -1, stack2 = -1) {
         ensurePotionEffect($effect`Frost Tea`, $item`cuppa Frost tea`);
     };
 
-    ensureHotRes();
-
-    sideZoneLoop($location`Burnbarrel Blvd.`, true, MACRO_KILL, function() {
-        const lastEncounter = getProperty('lastEncounter');
-        if (lastEncounter.includes('Getting Tired')) {
-            if (getPropertyInt('choiceAdventure206') === 1) {
-                tirevalanches++;
-                stackKills[tirevalanches] = tiresToKills(tireCount + 1);
-                setProperty('choiceAdventure206', '2'); // Getting Tired; Toss the tire on the fire gently
-                tireCount = 0;
-            } else {
-                tireCount++;
-                print('Tires on the stack: ' + tireCount, 'red');
-                if (tireCount >= tiresToThrow) {
-                    print('Going to throw violently.', 'red');
-                    setProperty('choiceAdventure206', '1'); // Getting Tired; Toss the tire on the fire violently
-                }
-            }
+    const changeTireStackPrefIfNeeded = () => {
+        if (tireCount >= tiresToThrow) {
+            print('Going to throw violently.', 'red');
+            set('choiceAdventure206', 1); // Getting Tired; Toss the tire on the fire violently
         }
+    };
 
+    const calculateThirdTireStack = () => {
         if (stackKills[2] > 0) {
-            const hobosLeft = 500 - (stackKills[2] + stackKills[1] + kills);
+            const hobosLeft = 500 - (tiresToKills(stackKills[2]) + tiresToKills(stackKills[1]) + kills);
             let tiresNeeded = 0;
             while ((hobosLeft + tiresToKills(tiresNeeded)) < 500) {
                 tiresNeeded++;
             }
             tiresToThrow = tiresNeeded;
+            print(`Tires needed on stack 3: ${tiresNeeded}`, 'red');
+            changeTireStackPrefIfNeeded();
         }
+    };
 
-        if (lastAdventureWasSuccessfulCombat()) {
-            kills++;
+    calculateThirdTireStack();
+    ensureHotRes();
+
+    sideZoneLoop($location`Burnbarrel Blvd.`, true, MACRO_KILL, function() {
+        kills = getHoboCountsRe(/defeated\s+Hot\s+hobo\s+x\s+(\d+)/gm);
+
+        const lastEncounter = get('lastEncounter');
+        if (lastEncounter.includes('Getting Tired')) {
+            if (get('choiceAdventure206') === 1) {
+                tirevalanches++;
+                stackKills[tirevalanches] = tiresToKills(tireCount + 1);
+                set('choiceAdventure206', 2); // Getting Tired; Toss the tire on the fire gently
+                tireCount = 0;
+            } else {
+                tireCount++;
+                print('Tires on the stack: ' + tireCount, 'red');
+                changeTireStackPrefIfNeeded();
+            }
         }
 
         if (lastEncounter.includes('Home, Home in the Range')) {
@@ -563,6 +586,7 @@ function runBB(tiresAlreadyStacked = 0, stack1 = -1, stack2 = -1) {
             return true;
         }
 
+        calculateThirdTireStack();
         ensureHotRes();
         return false;
     });
@@ -670,8 +694,14 @@ const runTS = ({ getFood = false, input = 'untuned', hoboKills }: tsArg): void =
                 parts = getRichardCounts();
                 const oldPart = part;
                 part = getNeededPart(parts, hoboKills);
-                if (part === Part.none) { print('Done getting parts.', 'blue'); done = true; }
-                if (part === Part.skins && oldPart !== Part.skins) { print('Need to get skins. Re-run the script.', 'blue'); done = true; }
+                if (part === Part.none) {
+                    print('Done getting parts.', 'blue');
+                    done = true;
+                }
+                if (part === Part.skins && oldPart !== Part.skins) {
+                    const macro = prepForSkins(hoboKills - parts[part]);
+                    macro.setAutoAttack();
+                }
             } else if (hoboKills)
                 done = hobosKilled >= hoboKills;
         }
