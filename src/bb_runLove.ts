@@ -29,8 +29,11 @@ export function main(): void {
         drink(2, $item`meadeorite`);
         drink(1, $item`perfect paloma`);
         use($item`milk of magnesium`);
-        eat(3, $item`water log`);
         chew(3, $item`agua de vida`);
+        eat(1, $item`extra-greasy slider`);
+        chew(2, $item`agua de vida`);
+        eat(2, $item`extra-greasy slider`);
+        chew(2, $item`agua de vida`);
     }
 
     if (availableAmount($item`driftwood beach comb`) === 0) use($item`piece of driftwood`);

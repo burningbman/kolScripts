@@ -1,89 +1,77 @@
-import { useFamiliar, outfit, abort, visitUrl, print, retrieveItem, haveEffect, use, adventure, itemDropModifier, myHp, useSkill, myAdventures, myMp, eat, runChoice, isBanished, equip } from 'kolmafia';
-import { $familiar, $item, $effect, $location, $skill, get, adventureMacro, Macro, $monster, $slot, set } from 'libram';
-import { ensureEffect, setChoice } from './lib';
-
-
-let flags = {
-    weakOutfit: false
-}
+import { useFamiliar, outfit, abort, visitUrl, retrieveItem, haveEffect, use, adventure, itemDropModifier, myAdventures, isBanished, equip, adv1, setAutoAttack, runChoice, myName, cliExecute } from 'kolmafia';
+import { $familiar, $item, $effect, $location, $skill, get, Macro, $monster, $slot, set } from 'libram';
+import { ensureEffect } from './lib';
 
 function gearUp(): boolean {
     useFamiliar($familiar`Jumpsuited Hound Dog`);
-
-
-    let drumMacOutfit, drumMacWeakOutfit = false;
-    try {
-        if (!flags.weakOutfit) {
-            drumMacOutfit = outfit('drum mac farm')
-        } else {
-            drumMacWeakOutfit = outfit('drum mac farm weak')
-        }
-    } catch {
-        flags.weakOutfit = true;
-        drumMacWeakOutfit = outfit('drum mac farm weak')
-    }
-
-    return drumMacOutfit || drumMacWeakOutfit;
+    equip($slot`familiar`, $item`fuzzy polar bear ears`);
+    return outfit('drum mac farm');
 }
 
 function validateIceHouseBanish() {
-    let monster = visitUrl('museum.php?action=icehouse').match(/perfectly-preserved (.*),/);
+    const monster = visitUrl('museum.php?action=icehouse').match(/perfectly-preserved (.*),/);
     return monster && monster[1];
 }
 
 function upkeepUltrahydrated() {
-    let ultrahydratedCount = haveEffect($effect`Ultrahydrated`);
-    if (ultrahydratedCount <= 0) {
+    if (!haveEffect($effect`Ultrahydrated`)) {
         use($item`disassembled clover`);
-        adventure($location`Oasis`, 1);
+        adventure($location`The Oasis`, 1);
     }
 }
 
 function upkeepBuffs() {
-    ensureEffect($effect`Phat Loot`, 1);
+    ensureEffect($effect`Fat Leon's Phat Loot Lyric`, 1);
     ensureEffect($effect`Polka of Plenty`, 1);
     ensureEffect($effect`Singer's Faithful Ocelot`, 1);
-    ensureEffect($effect`Leash of Linguini`, 1);
-    ensureEffect($effect`Empathy`, 1);
-    ensureEffect($effect`Blood Bond`, 1);
 }
 
-export function main() {
+export function main(): void {
+    cliExecute('boombox food');
+    retrieveItem($item`dromedary drinking helmet`, 1);
+    retrieveItem($item`ice house`, 1);
+
     if (!gearUp()) {
         abort('Could not equip outfit.');
     }
 
-    let iceHouseMonster = validateIceHouseBanish();
-    if (!iceHouseMonster || iceHouseMonster !== 'swarm of scarab beatles') {
-        abort('Please banish swarm of scarab beatles in the ice house.');
+    const iceHouseMonster = validateIceHouseBanish();
+    if (iceHouseMonster !== 'swarm of scarab beatles') {
+        visitUrl('museum.php?action=icehouse');
+        runChoice(2);
     }
 
     if (!retrieveItem($item`human musk`)) {
         abort('Could not get human musk');
     }
 
-    setChoice(1387, 3); // set saber to banish
-
     set('cloverProtectActive', false);
 
-    while (myAdventures() > 1) {
+    Macro.step('pickpocket')
+        .if_('monstername "oasis monster"', Macro.item($item`human musk`).abort())
+        .if_('monstername "swarm of scarab beatles"', Macro.item($item`ice house`).abort())
+        .if_('monstername "rolling stone"', Macro.trySkill($skill`Feel Hatred`)
+            .trySkill($skill`Snokebomb`)
+            .trySkill($skill`Show them your ring`)
+            .trySkill($skill`Reflex Hammer`)
+            .item($item`Daily Affirmation: Be a Mind Master`).abort())
+        .trySkill($skill`%fn, spit on them!`)
+        .skill($skill`Saucestorm`).setAutoAttack();
+
+    while (myAdventures() > 0) {
         if (!retrieveItem($item`Daily Affirmation: Be a Mind Master`)) {
             abort('Could not get Daily Affirmation: Be a Mind Master');
         }
 
-        if (myMp() < 100) {
-            eat($item`magical sausage`);
-        }
-
         upkeepUltrahydrated();
         upkeepBuffs();
+        gearUp();
 
-        if (myHp() < 100) {
-            useSkill($skill`Cannelloni Cocoon`);
+        if (itemDropModifier() < 234) {
+            abort('Not enough item drop to guarantee drum machines.');
         }
 
-        gearUp();
-        if (!isBanished($monster`rolling stone`)) {
+        if (myName().toLowerCase() === 'burningbman' && !isBanished($monster`rolling stone`)) {
             if (get('_feelHatredUsed') === 3 && get('_snokebombUsed') === 3 && get('_saberForceUses') === 5) {
                 // equip mafia ring
                 if (!get('_mafiaMiddleFingerRingUsed')) {
@@ -95,22 +83,9 @@ export function main() {
                 }
             }
         }
-
-        if (itemDropModifier() < 235) {
-            abort('Not enough item drop to guarantee drum machines.');
-        }
-
-        adventureMacro($location`Oasis`, Macro.step('pickpocket')
-            .if_('monstername "oasis monster"', Macro.item($item`human musk`).abort())
-            .if_('monstername "rolling stone"', Macro.trySkill($skill`Feel Hatred`)
-                .trySkill($skill`Snokebomb`)
-                .trySkill($skill`Use the force`)
-                .trySkill($skill`Show them your ring`)
-                .trySkill($skill`Reflex Hammer`)
-                .item($item`Daily Affirmation: Be a Mind Master`).abort())
-            .attack()
-        );
+        adv1($location`The Oasis`, -1, '');
     }
 
+    setAutoAttack(0);
     set('cloverProtectActive', true);
 }

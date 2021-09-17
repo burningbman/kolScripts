@@ -1,13 +1,16 @@
-import { useFamiliar, setProperty, getProperty, abort, visitUrl, print, equip, combatRateModifier, myHp, restoreHp, myName, myMp, eat, retrieveItem, myAdventures, setAutoAttack, cliExecute, myMaxhp, userConfirm, putCloset, equippedItem, itemAmount, haveEffect, useSkill, adv1, takeCloset, outfit, maximize, myInebriety, inebrietyLimit, myFamiliar, availableAmount } from 'kolmafia';
+import { useFamiliar, getProperty, abort, visitUrl, print, equip, combatRateModifier, myHp, restoreHp, myName, myMp, eat, retrieveItem, myAdventures, setAutoAttack, cliExecute, myMaxhp, userConfirm, putCloset, equippedItem, itemAmount, haveEffect, useSkill, adv1, takeCloset, outfit, maximize, myInebriety, inebrietyLimit, myFamiliar, availableAmount, getAutoAttack, myBasestat, mallPrice } from 'kolmafia';
 
-import { ensureEffect, shrug, getPropertyInt, getPropertyIntInit, incrementProperty, setPropertyInt, setChoice, sausageFightGuaranteed, lastAdventureText, ensurePotionEffect, setClan, inSemirareWindow } from './lib';
+import { ensureEffect, shrug, incrementProperty, setChoice, sausageFightGuaranteed, lastAdventureText, ensurePotionEffect, setClan, inSemirareWindow } from './lib';
 
-import { $familiar, $location, $item, $slot, $effect, Macro, $items, get, $skill, set } from 'libram';
+import { $familiar, $location, $item, $slot, $effect, Macro, $items, get, $skill, set, $stat } from 'libram';
 
-const MACRO_KILL = Macro.skill($skill`Saucegeyser`).repeat();
+const MACRO_KILL = Macro.skill($skill`Curse of Weaksauce`)
+    .skill($skill`Micrometeorite`)
+    .skill($skill`Entangling Noodles`)
+    .skill($skill`Saucegeyser`).repeat();
 const SR_LOCATIONS = [$location`Burnbarrel Blvd.`, $location`Exposure Esplanade`, $location`The Ancient Hobo Burial Ground`, $location`The Purple Light District`];
 
-const TRASH_PROP = '_BobSanders.TrashCount';
+const TRASH_PROP = '_bb_hobo.TrashCount';
 const DANCE_PROP = '_bb_hobo.DanceCount';
 
 enum Part {
@@ -86,15 +89,17 @@ const upkeepHpAndMp = (): void => {
         restoreHp(myMaxhp());
 };
 
-function fightSausageIfGuaranteed(): void {
+function fightSausageIfGuaranteed(macro: Macro): void {
     if (sausageFightGuaranteed()) {
         print('Fighting a Kramco in the Noob Cave');
         const currentOffhand = equippedItem($slot`off-hand`);
+        MACRO_KILL.setAutoAttack();
         equip($item`Kramco Sausage-o-Matic™`);
         adv1($location`Noob Cave`, -1, '');
 
         //Equip whatever we had here
         equip(currentOffhand);
+        macro.setAutoAttack();
     }
 }
 
@@ -102,8 +107,10 @@ const getSneakyForHobos = ({ sewers = false, useJeans = false, saber = false }):
     equip($item`Xiblaxian stealth cowl`);
     equip($item`chalk chlamys`);
     equip($slot`shirt`, $item`camouflage T-shirt`);
-    sewers ? equip($item`hobo code binder`) : equip($item`familiar scrapbook`);
-    useJeans ? equip($item`Jeans of Loathing`) : equip($item`Xiblaxian stealth trousers`);
+    equip($item`rusted-out shootin' iron`);
+    sewers ? equip($item`hobo code binder`) : equip($item`Kramco Sausage-o-Matic™`);
+    useJeans ? (myBasestat($stat`Moxie`) >= 150 ? equip($item`Jeans of Loathing`) :
+        equip($item`The Ghoul King's ghoulottes`)) : equip($item`Xiblaxian stealth trousers`);
     equip($slot`acc1`, $item`lucky gold ring`);
     equip($slot`acc2`, $item`mafia thumb ring`);
     equip($slot`acc3`, $item`Mr. Cheeng's spectacles`);
@@ -120,10 +127,10 @@ const getSneakyForHobos = ({ sewers = false, useJeans = false, saber = false }):
     ensureEffect($effect`The Sonata of Sneakiness`);
     shrug($effect`Carlweather's Cantata of Confrontation`);
 
-    if (getPropertyInt('_feelLonelyUsed') < 3) {
+    if (get('_feelLonelyUsed') < 3) {
         ensureEffect($effect`Feeling Lonely`);
     }
-    if (getPropertyInt('_powerfulGloveBatteryPowerUsed') <= 90) {
+    if (get('_powerfulGloveBatteryPowerUsed') <= 90) {
         ensureEffect($effect`Invisible Avatar`);
     }
 
@@ -211,37 +218,39 @@ function runSewer() {
     print('Starting sewers.', 'green');
     let checkGravesAndValues = true;
 
-    Macro.step('pickpocket')
+    const macro = Macro.step('pickpocket')
         .trySkill($skill`Feel Hatred`)
         .trySkill($skill`Snokebomb`)
         .trySkill($skill`Reflex Hammer`)
         .trySkill($skill`Use the Force`)
         .trySkill($skill`Chest X-Ray`)
         .trySkill($skill`Shattering Punch`)
-        .item([$item`green smoke bomb`, $item`green smoke bomb`]).setAutoAttack();
+        .attack().repeat();
+    macro.setAutoAttack();
 
     while (!throughSewers()) {
+        useFamiliar($familiar`Shorter-Order Cook`);
         upkeepHpAndMp();
         getSneakyForHobos({ sewers: true });
-        fightSausageIfGuaranteed();
+        fightSausageIfGuaranteed(macro);
 
         if (!getSewerItems()) throw 'Unable to get sewer items';
 
         if (checkGravesAndValues) {
             const sewerStatus = calculateGratesAndValues();
 
-            set('choiceAdventure198', sewerStatus.grates < 20 ? 3 : 1);
-            set('choiceAdventure197', sewerStatus.valves < 20 ? 3 : 1);
+            setChoice(198, sewerStatus.grates !== 20 ? 3 : 1);
+            setChoice(197, sewerStatus.valves !== 20 ? 3 : 1);
 
             // stop checking grates and valves count each loop once we have 20 of each
-            checkGravesAndValues = sewerStatus.grates < 20 && sewerStatus.valves < 20;
+            checkGravesAndValues = sewerStatus.grates !== 20 && sewerStatus.valves !== 20;
         }
 
         // setup equipment for banishes and free kills
         if (get('_feelHatredUsed') === 3 && get('_snokebombUsed') === 3) {
             if (get('_reflexHammerUsed') < 3) equip($slot`acc3`, $item`Lil' Doctor™ bag`);
             else if (get('_saberForceUses') < 5) equip($item`Fourth of May Cosplay Saber`);
-            else if (get('_chestXRayUsed') < 3) equip($slot`acc3`, $item`Lil' Doctor™ bag`); else retrieveItem(4, $item`green smoke bomb`);
+            else if (get('_chestXRayUsed') < 3) equip($slot`acc3`, $item`Lil' Doctor™ bag`);
         }
 
         adv1($location`A Maze of Sewer Tunnels`, -1, '');
@@ -260,8 +269,8 @@ const handleNickels = (location: Location) => {
         takeCloset(5 - availableAmount($item`hobo nickel`), $item`hobo nickel`);
 };
 
-function sideZoneLoop(location: Location, sneaky: boolean, macro: Macro, callback: () => boolean) {
-    let shouldBreak = false;
+function sideZoneLoop(location: Location, sneaky: boolean, macro: Macro, callback: () => { done: boolean, macro?: Macro }) {
+    let done = false;
     const upkeepCombat = () => {
         if (location !== $location`Hobopolis Town Square`) {
             const useJeans = [$location`Burnbarrel Blvd.`, $location`Exposure Esplanade`, $location`The Ancient Hobo Burial Ground`].includes(location);
@@ -279,19 +288,22 @@ function sideZoneLoop(location: Location, sneaky: boolean, macro: Macro, callbac
     };
 
     macro.setAutoAttack();
-    handleNickels(location);
 
-    while (!shouldBreak && myAdventures() !== 0) {
+    while (!done && myAdventures() !== 0) {
         upkeepCombat();
         upkeepHpAndMp();
 
-        fightSausageIfGuaranteed();
+        fightSausageIfGuaranteed(macro);
 
         adv1(location, -1, '');
 
         // handle nickels before callback so TS can uncloset 20 nickels if needed
         handleNickels(location);
-        shouldBreak = callback();
+        let tempMacro;
+        ({ done, macro: tempMacro } = callback());
+
+        // update the used macro
+        if (tempMacro) macro = tempMacro;
     }
 }
 
@@ -351,58 +363,59 @@ function runEE(totalIcicles = 50) {
             done = true;
         }
 
-        return done;
+        return { done };
     });
 }
 
 function runTheHeap(playingWithOthers = true) {
-    setProperty('choiceAdventure214', '1'); // You vs. The Volcano; Kick stuff
-    setProperty('choiceAdventure295', '1'); // Juicy!; Buy
-    setProperty('choiceAdventure203', '2'); // Deep Enough to Dive; Skip
+    set('choiceAdventure214', 1); // You vs. The Volcano; Kick stuff
+    set('choiceAdventure295', 1); // Juicy!; Buy
+    set('choiceAdventure203', 2); // Deep Enough to Dive; Skip
 
-    if (getPropertyIntInit(TRASH_PROP, 0) >= 5) {
-        setProperty('choiceAdventure216', '1'); // The Compostal Service; Be Green
+    if (get(TRASH_PROP, 0) >= 5) {
+        set('choiceAdventure216', 1); // The Compostal Service; Be Green
     } else {
-        setProperty('choiceAdventure216', '2'); // The Compostal Service; Begone'
+        set('choiceAdventure216', 2); // The Compostal Service; Begone'
     }
 
     if (playingWithOthers)
-        setProperty('choiceAdventure218', '0'); // I Refuse; abort
+        set('choiceAdventure218', 0); // I Refuse; abort
     else
-        setProperty('choiceAdventure218', '1'); // I Refuse; Explore the junkpile
+        set('choiceAdventure218', 1); // I Refuse; Explore the junkpile
 
     print('Starting Heap', 'green');
 
     sideZoneLoop($location`The Heap`, true, MACRO_KILL, function() {
-        const atOscus = getProperty('lastEncounter').includes('Deep Enough to Dive');
-        if (getProperty('lastEncounter').includes('You vs. The Volcano')) {
+        const lastEncounter = get('lastEncounter');
+        const done = lastEncounter.includes('Deep Enough to Dive');
+        if (lastEncounter.includes('You vs. The Volcano')) {
             incrementProperty(TRASH_PROP);//TODO: replace with myName()
-            if (getPropertyInt(TRASH_PROP) >= 5) {
-                setProperty('choiceAdventure216', '1'); // The Compostal Service; Be Green
+            if (get(TRASH_PROP) >= 5) {
+                set('choiceAdventure216', 1); // The Compostal Service; Be Green
             }
         }
-        else if (getPropertyInt(TRASH_PROP) >= 5 && getProperty('lastEncounter').includes('The Compostal Service')) {
-            setProperty('choiceAdventure216', '2'); // The Compostal Service; Begone'
-            setPropertyInt(TRASH_PROP, 0);
+        else if (get(TRASH_PROP) >= 5 && lastEncounter.includes('The Compostal Service')) {
+            set('choiceAdventure216', 2); // The Compostal Service; Begone'
+            set(TRASH_PROP, 0);
         }
 
-        else if (atOscus) {
+        else if (done) {
             print('Oscus is up.', 'green');
         }
 
-        return atOscus;
+        return { done };
     });
 
     print('Done in Heap', 'green');
 }
 
 function runAHBG(danceCount = 0) {
-    setProperty('choiceAdventure208', '2'); // Ah, So That's Where They've All Gone; Tiptoe through the tulips
-    setProperty('choiceAdventure220', '2'); // Returning to the Tomb; Disturb not ye these bones
-    setProperty('choiceAdventure293', '2'); // Flowers for You; Flee this creepy scene
-    setProperty('choiceAdventure221', '1'); // A Chiller Night (1); Study the hobos' dance moves
-    setProperty('choiceAdventure222', '1'); // A Chiller Night (2); Dance with them
-    setProperty('choiceAdventure204', '2'); // Skip adventure when Zombo is up
+    set('choiceAdventure208', 2); // Ah, So That's Where They've All Gone; Tiptoe through the tulips
+    set('choiceAdventure220', 2); // Returning to the Tomb; Disturb not ye these bones
+    set('choiceAdventure293', 2); // Flowers for You; Flee this creepy scene
+    set('choiceAdventure221', 1); // A Chiller Night (1); Study the hobos' dance moves
+    set('choiceAdventure222', 1); // A Chiller Night (2); Dance with them
+    set('choiceAdventure204', 2); // Skip adventure when Zombo is up
 
     // if danceCount not passed, check the property
     if (danceCount === 0) {
@@ -410,29 +423,42 @@ function runAHBG(danceCount = 0) {
     }
 
     if (danceCount >= 5) {
-        setProperty('choiceAdventure208', '1'); // Ah, So That's Where They've All Gone; Send the flowers to The Heap
+        set('choiceAdventure208', 1); // Ah, So That's Where They've All Gone; Send the flowers to The Heap
     }
+
+    const upkeepWeaponDamage = () => {
+        if (myMp() < 130) eat($item`magical sausage`);
+        ensureEffect($effect`Carol of the Bulls`);
+        ensureEffect($effect`Song of the North`);
+    };
+
+    upkeepWeaponDamage();
 
     sideZoneLoop($location`The Ancient Hobo Burial Ground`, true, Macro.attack().repeat(), function() {
         let done = false;
-        const lastEncounter = getProperty('lastEncounter');
+        const lastEncounter = get('lastEncounter');
         if (lastEncounter.includes('A Chiller Night')) {
             danceCount++;
             if (danceCount >= 5) {
-                setProperty('choiceAdventure208', '1'); // Ah, So That's Where They've All Gone; Send the flowers to The Heap
+                set('choiceAdventure208', 1); // Ah, So That's Where They've All Gone; Send the flowers to The Heap
             }
         }
         else if (danceCount >= 5 && lastEncounter.includes('Ah, So That\'s Where They\'ve All Gone')) {
-            setProperty('choiceAdventure208', '2'); // Ah, So That's Where They've All Gone; Tiptoe through the tulips
+            set('choiceAdventure208', 2); // Ah, So That's Where They've All Gone; Tiptoe through the tulips
             danceCount = 0;
         }
         else if (lastEncounter.includes('Welcome To You!')) {
             print('Zombo is up', 'blue');
             done = true;
         }
-        print('Dance count: ' + danceCount, 'blue');
+
         set(DANCE_PROP, danceCount);
-        return done;
+
+        if (!done) {
+            upkeepWeaponDamage();
+        }
+
+        return { done };
     });
     print('Done in AHBG', 'blue');
 }
@@ -448,11 +474,11 @@ function runPLD(maxFlimFlams = 10) {
 
     if ((diverts + flimflams) >= 21 && img != null && parseInt(img[1]) < 9 && flimflams < maxFlimFlams) {
         print('Starting barfights.', 'purple');
-        setProperty('choiceAdventure223', '1'); // Getting Clubbed; Try to get inside
+        set('choiceAdventure223', 1); // Getting Clubbed; Try to get inside
     }
     else {
         print('Flimflamming the crowd.', 'purple');
-        setProperty('choiceAdventure223', '3'); // Getting Clubbed; Try to flimflam the crowd
+        set('choiceAdventure223', 3); // Getting Clubbed; Try to flimflam the crowd
     }
 
     set('choiceAdventure224', 2); // Exclusive!; Pick several fights
@@ -489,7 +515,7 @@ function runPLD(maxFlimFlams = 10) {
             done = true;
         }
 
-        return done;
+        return { done };
     });
 
     print(`Done in PLD. At ${getHoboCountsRe(/flimflammed some hobos \((\d+) turns?\)/gm)} flimflams.`, 'purple');
@@ -504,22 +530,21 @@ function tiresToKills(tires: number): number {
     return (tires * tires * 0.1) + (0.7 * tires);
 }
 
-function runBB(tiresAlreadyStacked = 0, stack1 = -1, stack2 = -1) {
-    print(`Running BB with ${tiresAlreadyStacked} on the stack, ${stack1} in stack 1 and ${stack2} in stack 2`, 'red');
+function runBB(onStack = 0, stack1 = 0, stack2 = 0) {
+    print(`Running BB with ${onStack} on the stack, ${stack1} in stack 1 and ${stack2} in stack 2`, 'red');
     //TODO: store counts in new property or whatever storage mafia uses.
     //TODO: Real calculation for the last stack.
-    setProperty('choiceAdventure206', '2'); // Getting Tired; Toss the tire on the fire gently
-    setProperty('choiceAdventure207', '2'); // Hot Dog! I Mean... Door!; Leave the door be
-    setProperty('choiceAdventure213', '2'); // Piping Hot; Leave the valve alone
-    setProperty('choiceAdventure291', '2'); // A Tight Squeeze; No, thanks
+    setChoice(206, 2); // Getting Tired; Toss the tire on the fire gently
+    setChoice(207, 2); // Hot Dog! I Mean... Door!; Leave the door be
+    setChoice(213, 2); // Piping Hot; Leave the valve alone
+    setChoice(291, 1); // A Tight Squeeze; Buy some squeeze (5 nickels)
+    setChoice(201, 2); // Home, Home in the Range; Get out of the kitchen
 
     let kills = getHoboCountsRe(/defeated\s+Hot\s+hobo\s+x\s+(\d+)/gm);
-    let tireCount = tiresAlreadyStacked > 0 ? tiresAlreadyStacked : getHoboCountsRe(/on the fire \((\d+) turns?\)/gm) % 34;//Assume we follow 34 tires.  May need to adjust
+    let tireCount = onStack > 0 ? onStack : getHoboCountsRe(/on the fire \((\d+) turns?\)/gm) % 34;//Assume we follow 34 tires.  May need to adjust
     let tirevalanches = getHoboCountsRe(/started ((\d+)) tirevalanch/gm);
-    interface something {
-        [key: number]: number
-    }
-    const stackKills: something = { 1: 0, 2: 0 };
+
+    const stackKills: { [key: number]: number } = { 1: 0, 2: 0 };
     let tiresToThrow = 34;
 
     //TODO: handle if we specified stack sizes but haven't thrown violent?
@@ -530,15 +555,15 @@ function runBB(tiresAlreadyStacked = 0, stack1 = -1, stack2 = -1) {
         stackKills[2] = tiresToKills(stack2);
     }
 
-    if (tiresAlreadyStacked >= tiresToThrow) {
-        setProperty('choiceAdventure206', '1'); // Getting Tired; Toss the tire on the fire violently
+    if (onStack >= tiresToThrow) {
+        set('choiceAdventure206', 1); // Getting Tired; Toss the tire on the fire violently
     }
 
     const ensureHotRes = () => {
-        ensurePotionEffect($effect`Oiled-Up`, $item`pec oil`);
-        ensurePotionEffect($effect`Spiro Gyro`, $item`programmable turtle`);
-        ensurePotionEffect($effect`Ancient Protected`, $item`Ancient Protector Soda`);
-        ensurePotionEffect($effect`Frost Tea`, $item`cuppa Frost tea`);
+        // ensurePotionEffect($effect`Oiled-Up`, $item`pec oil`);
+        // ensurePotionEffect($effect`Spiro Gyro`, $item`programmable turtle`);
+        // ensurePotionEffect($effect`Ancient Protected`, $item`Ancient Protector Soda`);
+        // ensurePotionEffect($effect`Frost Tea`, $item`cuppa Frost tea`);
     };
 
     const changeTireStackPrefIfNeeded = () => {
@@ -550,12 +575,14 @@ function runBB(tiresAlreadyStacked = 0, stack1 = -1, stack2 = -1) {
 
     const calculateThirdTireStack = () => {
         if (stackKills[2] > 0) {
-            const hobosLeft = 500 - (tiresToKills(stackKills[2]) + tiresToKills(stackKills[1]) + kills);
+            kills = getHoboCountsRe(/defeated\s+Hot\s+hobo\s+x\s+(\d+)/gm);
+            const hobosLeft = 500 - stackKills[2] - stackKills[1] - kills;
             let tiresNeeded = 0;
-            while ((hobosLeft + tiresToKills(tiresNeeded)) < 500) {
+            while (tiresToKills(tiresNeeded) < hobosLeft) {
                 tiresNeeded++;
             }
             tiresToThrow = tiresNeeded;
+            print(`kills: ${kills} Stack 1: ${stackKills[1]} Stack 2: ${stackKills[2]} left: ${hobosLeft}`);
             print(`Tires needed on stack 3: ${tiresNeeded}`, 'red');
             changeTireStackPrefIfNeeded();
         }
@@ -565,6 +592,7 @@ function runBB(tiresAlreadyStacked = 0, stack1 = -1, stack2 = -1) {
     ensureHotRes();
 
     sideZoneLoop($location`Burnbarrel Blvd.`, true, MACRO_KILL, function() {
+        let done = false;
         kills = getHoboCountsRe(/defeated\s+Hot\s+hobo\s+x\s+(\d+)/gm);
 
         const lastEncounter = get('lastEncounter');
@@ -583,12 +611,16 @@ function runBB(tiresAlreadyStacked = 0, stack1 = -1, stack2 = -1) {
 
         if (lastEncounter.includes('Home, Home in the Range')) {
             print('Ol\' Scratch is up.');
-            return true;
+            done = true;
         }
 
-        calculateThirdTireStack();
+        // re-calculate tires needed if last adventure was hobo fought or tire stacking
+        if (!lastEncounter.includes('Home, Home in the Range') && !lastEncounter.includes('Hot Dog') && !lastEncounter.includes('Piping Hot') && !lastEncounter.includes('A Tight Squeeze')) {
+            calculateThirdTireStack();
+        }
+
         ensureHotRes();
-        return false;
+        return { done };
     });
 
     print(`Done in BB. Tires on the stack: ${tireCount}`, 'red');
@@ -613,8 +645,8 @@ type tsArg = { getFood: boolean, input: string, hoboKills: number | undefined }
 const prepForSkins = (skinsLeft: number): Macro => {
     while (haveEffect($effect`Carol of the Bulls`) < skinsLeft) {
         if (myMp() < 130) eat($item`magical sausage`);
-        ensureEffect($effect`Carol of the Bulls`, skinsLeft);
-        ensureEffect($effect`Song of the North`, skinsLeft);
+        useSkill($skill`Carol of the Bulls`);
+        useSkill($skill`Song of the North`);
     }
     ensureEffect($effect`Confidence of the Votive`, skinsLeft);
     ensureEffect($effect`Baconstoned`, skinsLeft);
@@ -625,7 +657,7 @@ const prepForSkins = (skinsLeft: number): Macro => {
 const runTS = ({ getFood = false, input = 'untuned', hoboKills }: tsArg): void => {
     let part: Part;
     let stopAfterFood: boolean;
-    let macro = Macro.skill($skill`Stuffed Mortar Shell`, $skill`Entangling Noodles`);
+    let macro = Macro.skill($skill`Stuffed Mortar Shell`, $skill`Micrometeorite`);
     let parts = getRichardCounts();
     const getSpecificParts = input !== 'untuned';
 
@@ -657,8 +689,8 @@ const runTS = ({ getFood = false, input = 'untuned', hoboKills }: tsArg): void =
         setChoice(232, 1); // Hobo Marketplace #2; Food Court
         setChoice(233, 1); // Food Court #1; Food
         setChoice(234, 1); // Food Court #2; Food
-        setChoice(235, 1); // Food #1; Muscle Booze
-        setChoice(236, 1); // Food #2; Muscle Booze
+        setChoice(235, 1); // Food #1; Muscle Food
+        setChoice(236, 1); // Food #2; Muscle Food
         setChoice(237, 1); // Muscle Food; Eat it
 
         setChoice(240, 1); // Food #1; Muscle Booze
@@ -684,7 +716,7 @@ const runTS = ({ getFood = false, input = 'untuned', hoboKills }: tsArg): void =
             print('Got booze. Ignoring marketplace for now.', 'blue');
             getFood = false;
             outfit('hobo_ts');
-            if (stopAfterFood) return true;
+            if (stopAfterFood) return { done: true };
         }
 
         if (lastAdventureWasSuccessfulCombat()) {
@@ -699,7 +731,7 @@ const runTS = ({ getFood = false, input = 'untuned', hoboKills }: tsArg): void =
                     done = true;
                 }
                 if (part === Part.skins && oldPart !== Part.skins) {
-                    const macro = prepForSkins(hoboKills - parts[part]);
+                    macro = prepForSkins(hoboKills - parts[part]);
                     macro.setAutoAttack();
                 }
             } else if (hoboKills)
@@ -707,7 +739,7 @@ const runTS = ({ getFood = false, input = 'untuned', hoboKills }: tsArg): void =
         }
         if (getFood) takeCloset($item`hobo nickel`, 20);
 
-        return done;
+        return { done, macro };
     });
 };
 
@@ -739,6 +771,7 @@ export function main(input: string): void {
             break;
         case 'sewer':
             set(TRASH_PROP, 0);
+            set(DANCE_PROP, 0);
             runSewer();
             break;
         case 'ee':

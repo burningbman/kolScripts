@@ -18,13 +18,8 @@ export function main(): void {
         use($item`Universal Seasoning`);
     }
 
-    if (!get('_glitchItemImplemented') && have($item`glitch season reward name`)) {
-        restoreHp(myMaxhp());
-        cliExecute('ccs garbo');
-        Macro.skill($skill`saucegeyser`).repeat().setAutoAttack();
-        use($item`glitch season reward name`);
-        visitUrl('inv_eat.php?which=3&whichitem=10207pwd=');
-        setAutoAttack(0);
+    if (!get('_glitchItemImplemented') && have($item`[glitch season reward name]`)) {
+        use($item`[glitch season reward name]`);
     }
 
     // Fortune Teller
@@ -80,14 +75,13 @@ export function main(): void {
         // prep for mushroom garden fight
         use($item`Oscus's neverending soda`);
         cliExecute('ccs garbo');
-        Macro.skill($skill`saucegeyser`).repeat().setAutoAttack();
+        Macro.skill($skill`Saucegeyser`).repeat().setAutoAttack();
         cliExecute('breakfast');
         setAutoAttack(0);
 
         if (get('kingLiberated')) {
-            putShop(6900, 0, availableAmount($item`battery (AAA)`), $item`battery (AAA)`);
-            if (myDaycount() > 1)
-                putShop(49996, 0, availableAmount($item`pocket wish`), $item`pocket wish`);
+            putShop(7865, 0, availableAmount($item`battery (AAA)`), $item`battery (AAA)`);
+            putShop(49996, 0, availableAmount($item`pocket wish`), $item`pocket wish`);
         }
     }
 }
