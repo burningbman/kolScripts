@@ -1,5 +1,5 @@
 import { get, $item, have, Macro, $skill } from 'libram';
-import { use, visitUrl, runChoice, cliExecute, wait, isUnrestricted, setAutoAttack, myName, print, myMaxhp, restoreHp, putShop, availableAmount, myDaycount } from 'kolmafia';
+import { use, visitUrl, runChoice, cliExecute, wait, isUnrestricted, setAutoAttack, myName, putShop, availableAmount, useSkill } from 'kolmafia';
 import { setClan } from './lib';
 
 function shuffleArray(array: any[]) {
@@ -21,6 +21,8 @@ export function main(): void {
     if (!get('_glitchItemImplemented') && have($item`[glitch season reward name]`)) {
         use($item`[glitch season reward name]`);
     }
+
+    useSkill($skill`Feel Disappointed`, 3);
 
     // Fortune Teller
     if (isUnrestricted($item`Clan Carnival Game`) && get('_clanFortuneConsultUses') < 3) {

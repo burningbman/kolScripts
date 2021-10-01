@@ -107,7 +107,6 @@ const getSneakyForHobos = ({ sewers = false, useJeans = false, saber = false }):
     equip($item`Xiblaxian stealth cowl`);
     equip($item`chalk chlamys`);
     equip($slot`shirt`, $item`camouflage T-shirt`);
-    equip($item`rusted-out shootin' iron`);
     sewers ? equip($item`hobo code binder`) : equip($item`Kramco Sausage-o-Matic™`);
     useJeans ? (myBasestat($stat`Moxie`) >= 150 ? equip($item`Jeans of Loathing`) :
         equip($item`The Ghoul King's ghoulottes`)) : equip($item`Xiblaxian stealth trousers`);
@@ -147,8 +146,8 @@ const getConfrontationalForHobos = () => {
     equip($item`fiberglass fedora`);
     equip($item`Misty Cloak`);
     equip($slot`shirt`, $item`"Remember the Trees" Shirt`);
-    equip($slot`off-hand`, $item`none`);
-    equip($item`Staff of Simmering Hatred`);
+    equip($slot`off-hand`, $item`Kramco Sausage-o-Matic™`);
+    equip($item`weeping willow wand`);
     equip($item`Spelunker's khakis`);
     equip($slot`acc1`, $item`lucky gold ring`);
     equip($slot`acc2`, $item`mafia thumb ring`);
@@ -225,7 +224,7 @@ function runSewer() {
         .trySkill($skill`Use the Force`)
         .trySkill($skill`Chest X-Ray`)
         .trySkill($skill`Shattering Punch`)
-        .attack().repeat();
+        .skill($skill`Saucegeyser`).repeat();
     macro.setAutoAttack();
 
     while (!throughSewers()) {
@@ -599,7 +598,7 @@ function runBB(onStack = 0, stack1 = 0, stack2 = 0) {
         if (lastEncounter.includes('Getting Tired')) {
             if (get('choiceAdventure206') === 1) {
                 tirevalanches++;
-                stackKills[tirevalanches] = tiresToKills(tireCount + 1);
+                stackKills[tirevalanches] = tiresToKills(tireCount);
                 set('choiceAdventure206', 2); // Getting Tired; Toss the tire on the fire gently
                 tireCount = 0;
             } else {

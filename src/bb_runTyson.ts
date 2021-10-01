@@ -1,7 +1,7 @@
 import {
     outfit, useFamiliar, cliExecute, myAdventures, buy, use, runChoice, visitUrl, mallPrice, toItem, myFullness, fullnessLimit, myInebriety, inebrietyLimit, print, availableAmount, isAccessible, getProperty, itemAmount, abort, putShop, autosell, userConfirm, numericModifier, shopPrice, runCombat,
 } from 'kolmafia';
-import { $familiar, $item, get, $coinmaster, set, $effect, $location, $monster, Macro, $skill } from 'libram';
+import { $familiar, $item, get, $coinmaster, set, $effect, $location, $monster, Macro, $skill, have } from 'libram';
 import { ensureEffect, getPropertyInt, mapMonster, setChoice } from './lib';
 
 const runVolcano = (): void => {
@@ -71,17 +71,19 @@ const getDrumMacMPA = (): number => {
 };
 
 const getDistensionAndDogHairPills = (): void => {
-    ensureEffect($effect`Transpondent`);
-    Macro.skill($skill`Feel Nostalgic`).skill($skill`Feel Envy`).attack().repeat().setAutoAttack();
-    mapMonster($location`Domed City of Grimacia`, $monster`whiny survivor`);
-    runCombat();
-    mapMonster($location`Domed City of Grimacia`, $monster`grizzled survivor`);
-    runCombat();
-    mapMonster($location`Domed City of Grimacia`, $monster`whiny survivor`);
-    runCombat();
+    if (get('_monstersMapped') < 3) {
+        ensureEffect($effect`Transpondent`);
+        Macro.skill($skill`Feel Nostalgic`).skill($skill`Feel Envy`).attack().repeat().setAutoAttack();
+        mapMonster($location`Domed City of Grimacia`, $monster`whiny survivor`);
+        runCombat();
+        mapMonster($location`Domed City of Grimacia`, $monster`grizzled survivor`);
+        runCombat();
+        mapMonster($location`Domed City of Grimacia`, $monster`whiny survivor`);
+        runCombat();
+    }
 
-    setChoice(536, get('_bb_runTyson_moreDistention') ? 1 : 2);
-    use(2, $item`Map to Safety Shelter Grimace Prime`);
+    setChoice(536, get<boolean>('_bb_runTyson_moreDistention', false) ? 1 : 2);
+    use(3, $item`Map to Safety Shelter Grimace Prime`);
     setChoice(536, get('_bb_runTyson_moreDistention') ? 2 : 1);
     use(2, $item`Map to Safety Shelter Grimace Prime`);
     set('_bb_runTyson_moreDistention', !get('_bb_runTyson_moreDistention'));
@@ -104,10 +106,9 @@ export function main(): void {
     }
 
     // cargo shorts
-    if (!get('_cargoPocketEmptied')) {
+    if (!get<boolean>('_cargoPocketEmptied')) {
         getDistensionAndDogHairPills();
         cliExecute('mom stats');
-        cliExecute('bb_goShopping');
         const emptiedPocketsPref = getProperty('cargoPocketsEmptied');
         const emptiedPockets = emptiedPocketsPref.split(',');
 
@@ -116,6 +117,14 @@ export function main(): void {
                 cliExecute(`cargo pick ${i}`);
                 break;
             }
+        }
+
+        if (!have($item`spice melange`)) {
+            buy(1, $item`spice melange`, 250000);
+        }
+
+        if (availableAmount($item`Frosty's frosty mug`) < 5) {
+            buy(5, $item`Frosty's frosty mug`, 60000);
         }
     }
 

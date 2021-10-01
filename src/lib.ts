@@ -39,9 +39,10 @@ import {
     lastItemMessage,
     getPlayerName,
     myName,
-    getCounters
+    getCounters,
+    sweetSynthesis
 } from 'kolmafia';
-import { $effect, $effects, $item, $skill, $familiar, $location, $slot } from 'libram';
+import { $effect, $effects, $item, $skill, $familiar, $location, $slot, get, set, have } from 'libram';
 
 export function adventureHere(loc: Location, fam = $familiar`none`, script = '') {
     // Just submits an adv1 and also allows you to do an afterAdventure
@@ -78,7 +79,7 @@ export function setPropertyInt(name: string, value: number) {
 }
 
 export function incrementProperty(name: string) {
-    setPropertyInt(name, getPropertyInt(name) + 1);
+    set(name, get<number>(name, 0) + 1);
 }
 
 export function getPropertyBoolean(name: string) {
@@ -407,5 +408,5 @@ export function lastAdventureWasSuccessfulCombat(): boolean {
 
 export const inSemirareWindow = (): boolean => {
     return getCounters('Semirare window end', 0, 60) === 'Semirare window end' &&
-    getCounters('Semirare window begin', 1, 60) !== 'Semirare window begin';
+        getCounters('Semirare window begin', 1, 60) !== 'Semirare window begin';
 };
