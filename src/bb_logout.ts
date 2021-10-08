@@ -1,5 +1,5 @@
 import { setClan } from './lib';
-import { maximize, myName, outfit } from 'kolmafia';
+import { maximize, myName } from 'kolmafia';
 
 export function main(): void {
     if (myName().toLowerCase() !== 'burningbman') {
@@ -7,6 +7,5 @@ export function main(): void {
     }
 
     setClan('Bonus Adventures from Hell');
-    // outfit('Rollover');
-    maximize('adventures', false);
+    maximize('adventures +equip blue LavaCo Lamp', false);
 }
