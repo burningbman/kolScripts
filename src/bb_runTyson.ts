@@ -89,22 +89,7 @@ const getDistensionAndDogHairPills = (): void => {
     set('_bb_runTyson_moreDistention', !get('_bb_runTyson_moreDistention'));
 };
 
-export function main(): void {
-    set('logPreferenceChange', false);
-    let mode;
-    const drumMacMPA = getDrumMacMPA();
-
-    if (drumMacMPA > 1.5 * mallPrice($item`drum machine`)) throw 'Check mall prices';
-
-    if (drumMacMPA < 3450) {
-        print('Going volcano mining', 'red');
-        set('valueOfAdventure', 3450);
-        mode = 'volcano';
-    } else {
-        set('valueOfAdventure', drumMacMPA);
-        print(`Farming drum machines with ${drumMacMPA} MPA`, 'green');
-    }
-
+const pullDeskBell = (): void => {
     // cargo shorts
     if (!get<boolean>('_cargoPocketEmptied')) {
         getDistensionAndDogHairPills();
@@ -127,6 +112,25 @@ export function main(): void {
             buy(5, $item`Frosty's frosty mug`, 60000);
         }
     }
+}
+
+export function main(): void {
+    set('logPreferenceChange', false);
+    let doVolcano = false;
+    const drumMacMPA = getDrumMacMPA();
+
+    if (drumMacMPA > 1.5 * mallPrice($item`drum machine`)) throw 'Check mall prices';
+
+    if (drumMacMPA < 3450) {
+        print('Going volcano mining', 'red');
+        set('valueOfAdventure', 3450);
+        doVolcano = true;
+    } else {
+        set('valueOfAdventure', drumMacMPA);
+        print(`Farming drum machines with ${drumMacMPA} MPA`, 'green');
+    }
+
+    pullDeskBell();
 
     // generate all our turns
     if (myFullness() < fullnessLimit()) {
@@ -135,20 +139,19 @@ export function main(): void {
     }
 
     if (myInebriety() <= inebrietyLimit()) {
-        if (mode === 'volcano') {
+        if (doVolcano) {
             runVolcano();
         } else {
             cliExecute('bb_drumMacFarm');
 
-            for (const item of [$item`drum machine`, $item`carbonated water lily`, $item`palm frond`]) {
+            for (const item of [$item`drum machine`, $item`carbonated water lily`, $item`palm frond`, $item`Special Seasoning`]) {
                 putShop(shopPrice(item), 0, availableAmount(item), item);
             }
             autosell(availableAmount($item`hot date`), $item`hot date`);
-            putShop(3000, 0, $item`Special Seasoning`);
         }
     }
 
-    // mine volcano and nightcap
+    // nightcap if everything was successful
     if (myAdventures() === 0 && myInebriety() <= inebrietyLimit()) {
         useFamiliar($familiar`Stooper`);
         cliExecute('CONSUME ALL; CONSUME NIGHTCAP');
