@@ -1,5 +1,5 @@
-import { autosell, availableAmount, chew, drink, eat, myInebriety, putShop, use, useSkill } from 'kolmafia';
-import { $item, $skill } from 'libram';
+import { autosell, availableAmount, chew, cliExecute, drink, eat, myInebriety, putShop, use, useSkill } from 'kolmafia';
+import { $item, $skill, set } from 'libram';
 
 const MALL_MIN_ITEMS = [$item`cyan seashell`, $item`gray seashell`, $item`green seashell`, $item`magenta seashell`, $item`yellow seashell`, $item`kelp`];
 
@@ -23,18 +23,8 @@ export function main(): void {
     autosell(availableAmount($item`baconstone`), $item`baconstone`);
     autosell(availableAmount($item`hamethyst`), $item`hamethyst`);
 
-    if (myInebriety() === 0) {
-        useSkill(3, $skill`Ode to Booze`);
-        drink(6, $item`perfect cosmopolitan`);
-        drink(2, $item`meadeorite`);
-        drink(1, $item`perfect paloma`);
-        use($item`milk of magnesium`);
-        chew(3, $item`agua de vida`);
-        eat(1, $item`extra-greasy slider`);
-        chew(2, $item`agua de vida`);
-        eat(2, $item`extra-greasy slider`);
-        chew(2, $item`agua de vida`);
-    }
+    set('valueOfAdventure', 1500);
+    cliExecute('CONSUME ALL; CONSUME NIGHTCAP');
 
     if (availableAmount($item`driftwood beach comb`) === 0) use($item`piece of driftwood`);
 }
