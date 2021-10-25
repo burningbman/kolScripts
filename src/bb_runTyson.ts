@@ -111,6 +111,10 @@ const pullDeskBell = (): void => {
         if (availableAmount($item`Frosty's frosty mug`) < 5) {
             buy(5, $item`Frosty's frosty mug`, 60000);
         }
+
+        if (!have($item`cuppa Voarci tea`)) {
+            buy(1, $item`cuppa Voarci tea`, 95000);
+        }
     }
 }
 
