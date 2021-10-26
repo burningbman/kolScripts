@@ -1,10 +1,16 @@
-import { useFamiliar, outfit, abort, visitUrl, retrieveItem, haveEffect, use, adventure, itemDropModifier, myAdventures, isBanished, equip, adv1, setAutoAttack, runChoice, myName, cliExecute } from 'kolmafia';
-import { $familiar, $item, $effect, $location, $skill, get, Macro, $monster, $slot, set } from 'libram';
+import { useFamiliar, outfit, abort, visitUrl, retrieveItem, haveEffect, use, adventure, itemDropModifier, myAdventures, isBanished, equip, adv1, setAutoAttack, runChoice, myName, cliExecute, buy } from 'kolmafia';
+import { $familiar, $item, $effect, $location, $skill, get, Macro, $monster, $slot, set, have } from 'libram';
 import { ensureEffect } from './lib';
 
 function gearUp(): boolean {
+    if (!have($item`amulet coin`)) {
+        buy(1, $item`box of familiar jacks`, 10000);
+        useFamiliar($familiar`Cornbeefadon`);
+        use($item`box of familiar jacks`);
+    }
+
     useFamiliar($familiar`Jumpsuited Hound Dog`);
-    equip($slot`familiar`, $item`fuzzy polar bear ears`);
+    equip($slot`familiar`, $item`amulet coin`);
     return outfit('drum mac farm');
 }
 

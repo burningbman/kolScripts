@@ -112,8 +112,8 @@ const pullDeskBell = (): void => {
             buy(5, $item`Frosty's frosty mug`, 60000);
         }
 
-        if (!have($item`cuppa Voarci tea`)) {
-            buy(1, $item`cuppa Voarci tea`, 95000);
+        if (!have($item`cuppa Voraci tea`)) {
+            buy(1, $item`cuppa Voraci tea`, 95000);
         }
     }
 }
