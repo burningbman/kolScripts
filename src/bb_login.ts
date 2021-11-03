@@ -82,7 +82,7 @@ export function main(): void {
         setAutoAttack(0);
 
         if (get('kingLiberated')) {
-            putShop(10410, 0, availableAmount($item`battery (AAA)`), $item`battery (AAA)`);
+            putShop(11990, 0, availableAmount($item`battery (AAA)`), $item`battery (AAA)`);
             putShop(49996, 0, availableAmount($item`pocket wish`), $item`pocket wish`);
         }
     }

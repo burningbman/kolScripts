@@ -1,5 +1,5 @@
 import {
-    outfit, useFamiliar, cliExecute, myAdventures, buy, use, runChoice, visitUrl, mallPrice, toItem, myFullness, fullnessLimit, myInebriety, inebrietyLimit, print, availableAmount, isAccessible, getProperty, itemAmount, abort, putShop, autosell, userConfirm, numericModifier, shopPrice, runCombat,
+    outfit, useFamiliar, cliExecute, myAdventures, buy, use, runChoice, visitUrl, mallPrice, toItem, myFullness, fullnessLimit, myInebriety, inebrietyLimit, print, availableAmount, isAccessible, getProperty, itemAmount, abort, putShop, autosell, numericModifier, shopPrice, runCombat,
 } from 'kolmafia';
 import { $familiar, $item, get, $coinmaster, set, $effect, $location, $monster, Macro, $skill, have } from 'libram';
 import { ensureEffect, getPropertyInt, mapMonster, setChoice } from './lib';
@@ -116,7 +116,7 @@ const pullDeskBell = (): void => {
             buy(1, $item`cuppa Voraci tea`, 95000);
         }
     }
-}
+};
 
 export function main(): void {
     set('logPreferenceChange', false);
