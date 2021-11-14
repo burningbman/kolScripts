@@ -14,6 +14,7 @@ module.exports = {
         bb_runTyson: './src/bb_runTyson.ts',
         bb_logout: './src/bb_logout.ts',
         bb_runLove: './src/bb_runLove.ts',
+        bb_sea: './src/bb_sea.ts',
     },
     mode: 'development',
     devtool: false,
