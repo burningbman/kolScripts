@@ -26,25 +26,35 @@ import {
   takeCloset,
   outfit,
   maximize,
-  myInebriety,
-  inebrietyLimit,
   myFamiliar,
   availableAmount,
-  getAutoAttack,
   myBasestat,
-  mallPrice,
+  myThrall,
+  myClass,
+  restoreMp,
+  myMaxmp,
+  getClanName,
+  haveOutfit,
+  familiarWeight,
+  weightAdjustment,
+  stashAmount,
+  takeStash,
+  putStash,
+  use,
 } from "kolmafia";
 
 import {
   ensureEffect,
   shrug,
-  incrementProperty,
-  setChoice,
   sausageFightGuaranteed,
   lastAdventureText,
-  ensurePotionEffect,
   setClan,
   inSemirareWindow,
+  setChoice,
+  getEffect,
+  myFamiliarWeight,
+  grabColdMedicine,
+  isDrunk,
 } from "./lib";
 
 import {
@@ -59,11 +69,16 @@ import {
   $skill,
   set,
   $stat,
+  $class,
+  maximizeCached,
+  $phylum,
+  Mood,
 } from "libram";
 
-const MACRO_KILL = Macro.skill($skill`Curse of Weaksauce`)
-  .skill($skill`Micrometeorite`)
-  .skill($skill`Entangling Noodles`)
+const MACRO_KILL = Macro.externalIf(isDrunk(), Macro.attack().repeat())
+  // .skill($skill`Curse of Weaksauce`)
+  // .skill($skill`Micrometeorite`)
+  // .skill($skill`Entangling Noodles`)
   .skill($skill`Saucegeyser`)
   .repeat();
 const SR_LOCATIONS = [
@@ -75,7 +90,7 @@ const SR_LOCATIONS = [
 
 const TRASH_PROP = "_bb_hobo.TrashCount";
 const DANCE_PROP = "_bb_hobo.DanceCount";
-const TIRE_COUNT = 33;
+const TIRE_COUNT = 32;
 
 enum Part {
   boots = 1,
@@ -117,15 +132,18 @@ type scoboParts = {
 };
 
 const setFamiliar = (): void => {
-  if (myFamiliar() === $familiar`Stooper` && myInebriety() >= inebrietyLimit())
-    return;
-
-  // set snapper to track hobos
-  useFamiliar($familiar`Red-Nosed Snapper`);
-  if (get("redSnapperPhylum") !== "hobo") {
-    visitUrl("familiar.php?action=guideme&pwd");
-    visitUrl("choice.php?pwd&whichchoice=1396&option=1&cat=hobo");
+  if (isDrunk()) {
+    useFamiliar($familiar`Stooper`);
+  } else {
+    // set snapper to track hobos
+    useFamiliar($familiar`Red-Nosed Snapper`);
+    if (get("redSnapperPhylum") !== $phylum`hobo`) {
+      visitUrl("familiar.php?action=guideme&pwd");
+      visitUrl("choice.php?pwd&whichchoice=1396&option=1&cat=hobo");
+    }
   }
+
+  equip($item`miniature crystal ball`);
 };
 
 const getRichardCounts = (): scoboParts => {
@@ -171,7 +189,7 @@ const upkeepHpAndMp = (): void => {
 };
 
 function fightSausageIfGuaranteed(macro: Macro): void {
-  if (sausageFightGuaranteed()) {
+  if (sausageFightGuaranteed() && !isDrunk()) {
     print("Fighting a Kramco in the Noob Cave");
     const currentOffhand = equippedItem($slot`off-hand`);
     MACRO_KILL.setAutoAttack();
@@ -184,34 +202,68 @@ function fightSausageIfGuaranteed(macro: Macro): void {
   }
 }
 
-const getSneakyForHobos = ({
-  sewers = false,
-  useJeans = false,
-  saber = false,
-}): void => {
-  equip($item`Xiblaxian stealth cowl`);
-  equip($item`chalk chlamys`);
-  equip($slot`shirt`, $item`camouflage T-shirt`);
-  sewers
-    ? equip($item`hobo code binder`)
-    : equip($item`Kramco Sausage-o-Matic™`);
-  useJeans
-    ? myBasestat($stat`Moxie`) >= 150
-      ? equip($item`Jeans of Loathing`)
-      : equip($item`The Ghoul King's ghoulottes`)
-    : equip($item`Xiblaxian stealth trousers`);
-  equip($slot`acc1`, $item`lucky gold ring`);
-  equip($slot`acc2`, $item`mafia thumb ring`);
-  equip($slot`acc3`, $item`Mr. Cheeng's spectacles`);
+const equipSneaky = ({ sewers = false, physical = false }): void => {
+  let forceEquip = $items`lucky gold ring, mafia thumb ring, Mr. Cheeng's spectacles`;
+  let bonusEquip = new Map();
 
-  // handle weapon equipping
-  if (sewers) equip($item`gatorskin umbrella`);
-  else if (saber) equip($item`Fourth of May Cosplay Saber`);
-  else equip($item`rusted-out shootin' iron`);
+  if (sewers) {
+    forceEquip = forceEquip.concat(
+      $items`hobo code binder, gatorskin umbrella`
+    );
+  } else {
+    bonusEquip = new Map([[$item`garbage sticker`, 100]]);
+  }
+
+  if (isDrunk()) {
+    forceEquip.push($item`Drunkula's wineglass`);
+  }
+
+  if (physical) {
+    if (isDrunk()) {
+      forceEquip.push($item`Fourth of May Cosplay Saber`);
+    } else {
+      forceEquip.push(
+        myBasestat($stat`Moxie`) >= 150
+          ? $item`Jeans of Loathing`
+          : $item`The Ghoul King's ghoulottes`
+      );
+    }
+  }
+
+  maximizeCached(["-combat"], {
+    forceEquip,
+    bonusEquip,
+  });
+};
+
+const upkeepDmgWhileDrunk = () => {
+  if (isDrunk()) {
+    ensureEffect($effect`Carol of the Bulls`);
+    ensureEffect($effect`Song of the North`);
+    ensureEffect($effect`Frenzied, Bloody`);
+  }
+};
+
+let USE_BANDER = true;
+const getSneakyForHobos = ({ sewers = false, physical = false }): void => {
+  if (sewers) {
+    if (USE_BANDER) {
+      maximizeCached(["familiar weight"], {
+        forceEquip: $items`hobo code binder, gatorskin umbrella`,
+      });
+    }
+    if (get("_banderRunaways") >= Math.floor(myFamiliarWeight() / 5)) {
+      USE_BANDER = false;
+      equipSneaky({ sewers, physical });
+    }
+  } else {
+    equipSneaky({ sewers, physical });
+  }
 
   ensureEffect($effect`Smooth Movements`);
   ensureEffect($effect`The Sonata of Sneakiness`);
   shrug($effect`Carlweather's Cantata of Confrontation`);
+  upkeepDmgWhileDrunk();
 
   if (get("_feelLonelyUsed") < 3) {
     ensureEffect($effect`Feeling Lonely`);
@@ -220,11 +272,10 @@ const getSneakyForHobos = ({
     ensureEffect($effect`Invisible Avatar`);
   }
 
-  let desiredNonCombat = -27;
+  let desiredNonCombat = -26;
   if (sewers) desiredNonCombat++;
-  if (useJeans) desiredNonCombat++;
-  if (saber) desiredNonCombat++;
-  if (combatRateModifier() > desiredNonCombat) {
+  if (physical) desiredNonCombat++;
+  if (!USE_BANDER && combatRateModifier() > desiredNonCombat) {
     abort("Not sneaky enough.");
   }
 };
@@ -233,8 +284,8 @@ const getConfrontationalForHobos = () => {
   equip($item`fiberglass fedora`);
   equip($item`Misty Cloak`);
   equip($slot`shirt`, $item`"Remember the Trees" Shirt`);
-  equip($slot`off-hand`, $item`Kramco Sausage-o-Matic™`);
-  equip($item`weeping willow wand`);
+  equip($slot`off-hand`, $item`garbage sticker`);
+  equip($item`garbage sticker`);
   equip($item`Spelunker's khakis`);
   equip($slot`acc1`, $item`lucky gold ring`);
   equip($slot`acc2`, $item`mafia thumb ring`);
@@ -243,6 +294,7 @@ const getConfrontationalForHobos = () => {
   ensureEffect($effect`Musk of the Moose`);
   ensureEffect($effect`Carlweather's Cantata of Confrontation`);
   shrug($effect`The Sonata of Sneakiness`);
+  upkeepDmgWhileDrunk();
 
   if (combatRateModifier() < 25) abort("Not confrontational enough.");
 };
@@ -305,7 +357,6 @@ const getSewerItems = () => {
 function runSewer() {
   print("Starting sewers.", "green");
   let checkGravesAndValues = true;
-
   const macro = Macro.step("pickpocket")
     .trySkill($skill`Feel Hatred`)
     .trySkill($skill`Snokebomb`)
@@ -313,12 +364,15 @@ function runSewer() {
     .trySkill($skill`Use the Force`)
     .trySkill($skill`Chest X-Ray`)
     .trySkill($skill`Shattering Punch`)
-    .skill($skill`Saucegeyser`)
-    .repeat();
-  macro.setAutoAttack();
+    .trySkill($skill`Gingerbread Mob Hit`)
+    .item($item`peppermint parasol`);
 
-  while (!throughSewers()) {
-    useFamiliar($familiar`Shorter-Order Cook`);
+  while (myAdventures() > 10 && !throughSewers()) {
+    // boost fam weight for boots
+    ensureEffect($effect`Empathy`);
+    ensureEffect($effect`Leash of Linguini`);
+    ensureEffect($effect`Blood Bond`);
+
     upkeepHpAndMp();
     getSneakyForHobos({ sewers: true });
     fightSausageIfGuaranteed(macro);
@@ -344,16 +398,37 @@ function runSewer() {
         equip($item`Fourth of May Cosplay Saber`);
       else if (get("_chestXRayUsed") < 3)
         equip($slot`acc3`, $item`Lil' Doctor™ bag`);
+      else {
+        retrieveItem($item`peppermint parasol`);
+      }
     }
 
+    if (
+      get("_banderRunaways") <
+      Math.floor(
+        (familiarWeight($familiar`Pair of Stomping Boots`) +
+          weightAdjustment()) /
+          5
+      )
+    ) {
+      useFamiliar($familiar`Pair of Stomping Boots`);
+      Macro.trySkill($skill`Release the Boots`)
+        .step("runaway")
+        .setAutoAttack();
+    } else {
+      useFamiliar($familiar`Shorter-Order Cook`);
+      macro.setAutoAttack();
+    }
+
+    HOBO_MOOD.execute();
     adv1($location`A Maze of Sewer Tunnels`, -1, "");
   }
 
-  const sewerStatus = calculateGratesAndValues();
-  print(
-    "Valves: " + sewerStatus.valves + " Grates: " + sewerStatus.grates,
-    "green"
-  );
+  // const sewerStatus = calculateGratesAndValues();
+  // print(
+  //   "Valves: " + sewerStatus.valves + " Grates: " + sewerStatus.grates,
+  //   "green"
+  // );
   print("Through the sewers.", "green");
 }
 
@@ -374,17 +449,15 @@ function sideZoneLoop(
   let done = false;
   const upkeepCombat = () => {
     if (location !== $location`Hobopolis Town Square`) {
-      const useJeans = [
+      const physical = [
         $location`Burnbarrel Blvd.`,
-        $location`Exposure Esplanade`,
         $location`The Ancient Hobo Burial Ground`,
       ].includes(location);
 
       if (sneaky) {
         getSneakyForHobos({
           sewers: false,
-          useJeans,
-          saber: $location`The Ancient Hobo Burial Ground` === location,
+          physical,
         });
       } else getConfrontationalForHobos();
     }
@@ -393,10 +466,12 @@ function sideZoneLoop(
   macro.setAutoAttack();
 
   while (!done && myAdventures() !== 0) {
+    HOBO_MOOD.execute();
     upkeepCombat();
     upkeepHpAndMp();
 
     fightSausageIfGuaranteed(macro);
+    grabColdMedicine();
 
     adv1(location, -1, "");
 
@@ -410,14 +485,33 @@ function sideZoneLoop(
   }
 }
 
+const isScratchReady = (): boolean => {
+  const scratchPage = visitUrl("clan_hobopolis.php?place=4") || "";
+  const scratchIndex = scratchPage.match(/burnbarrelblvd(.*)\.gif/);
+  return Boolean(scratchIndex && parseInt(scratchIndex[1]) === 10);
+};
+
+let _ignoreClosingBB = false;
+const ignoreClosingBB = (): boolean => {
+  if (_ignoreClosingBB) {
+    return _ignoreClosingBB;
+  }
+  _ignoreClosingBB = userConfirm(
+    "Ready for big yodel, but scratch is up. Keep running in EE?"
+  );
+  return _ignoreClosingBB;
+};
+
 const MAX_DIVERTS = 21;
-function runEE(totalIcicles = 70) {
-  print("Starting EE", "blue");
+const DEFAULT_ICICLES = 73;
+function runEE(totalIcicles = DEFAULT_ICICLES) {
   print(`Running EE going for ${totalIcicles} before yodel`, "blue");
-  set("choiceAdventure273", 1); // The Frigid Air; Pry open the freezer
-  set("choiceAdventure217", 1); // There Goes Fritz!; Yodel a little
-  set("choiceAdventure292", 2); // Cold Comfort; I’ll have the salad. I mean, I’ll leave.
-  set("choiceAdventure202", 2); // Frosty; Skip adventure
+  setChoice(273, 1); // The Frigid Air; Pry open the freezer
+  setChoice(217, 1); // There Goes Fritz!; Yodel a little
+  setChoice(292, 2); // Cold Comfort; I’ll have the salad. I mean, I’ll leave.
+  setChoice(202, 2); // Frosty; Skip adventure
+
+  const scratchReady = isScratchReady();
 
   const bigYodelDone =
     getHoboCountsRe(
@@ -439,11 +533,14 @@ function runEE(totalIcicles = 70) {
   let diverts = MAX_DIVERTS;
 
   // Divert if still need any; otherwise make icicles
-  set("choiceAdventure215", diverts < MAX_DIVERTS ? 2 : 3);
+  setChoice(215, diverts < MAX_DIVERTS ? 2 : 3);
 
   if (icicles >= totalIcicles) {
+    if (!isScratchReady && !ignoreClosingBB()) {
+      print("Icicles done. Time to wrap up BB before big yodel.", "cold");
+    }
     print("Desired icicle account achieved. Looking for big yodel.", "blue");
-    set("choiceAdventure217", 3); // There Goes Fritz!; Yodel your heart out
+    setChoice(217, 3); // There Goes Fritz!; Yodel your heart out
   }
 
   print(
@@ -458,13 +555,17 @@ function runEE(totalIcicles = 70) {
         // making icicles
         icicles++;
         if (icicles >= totalIcicles) {
-          set("choiceAdventure217", 3); // big yodel
+          setChoice(217, 3); // big yodel
+          if (!scratchReady && !ignoreClosingBB()) {
+            print("Icicles done. Time to wrap up BB before big yodel.", "cold");
+            done = true;
+          }
         }
       } else if (get("choiceAdventure215") === 2) {
         // diverting
         diverts++;
         if (diverts >= MAX_DIVERTS) {
-          set("choiceAdventure215", 3); // make icicles
+          setChoice(215, 3); // make icicles
         }
       }
 
@@ -488,182 +589,6 @@ function runEE(totalIcicles = 70) {
   });
 }
 
-function runTheHeap(playingWithOthers = true) {
-  set("choiceAdventure214", 1); // You vs. The Volcano; Kick stuff
-  set("choiceAdventure295", 1); // Juicy!; Buy
-  set("choiceAdventure203", 2); // Deep Enough to Dive; Skip
-
-  if (get(TRASH_PROP, 0) >= 5) {
-    set("choiceAdventure216", 1); // The Compostal Service; Be Green
-  } else {
-    set("choiceAdventure216", 2); // The Compostal Service; Begone'
-  }
-
-  if (playingWithOthers) set("choiceAdventure218", 0);
-  // I Refuse; abort
-  else set("choiceAdventure218", 1); // I Refuse; Explore the junkpile
-
-  print("Starting Heap", "green");
-
-  sideZoneLoop($location`The Heap`, true, MACRO_KILL, function () {
-    const lastEncounter = get("lastEncounter");
-    const done = lastEncounter.includes("Deep Enough to Dive");
-    if (lastEncounter.includes("You vs. The Volcano")) {
-      incrementProperty(TRASH_PROP); //TODO: replace with myName()
-      if (get(TRASH_PROP) >= 5) {
-        set("choiceAdventure216", 1); // The Compostal Service; Be Green
-      }
-    } else if (
-      get(TRASH_PROP) >= 5 &&
-      lastEncounter.includes("The Compostal Service")
-    ) {
-      set("choiceAdventure216", 2); // The Compostal Service; Begone'
-      set(TRASH_PROP, 0);
-    } else if (done) {
-      print("Oscus is up.", "green");
-    }
-
-    return { done };
-  });
-
-  print("Done in Heap", "green");
-}
-
-function runAHBG(danceCount = 0) {
-  set("choiceAdventure208", 2); // Ah, So That's Where They've All Gone; Tiptoe through the tulips
-  set("choiceAdventure220", 2); // Returning to the Tomb; Disturb not ye these bones
-  set("choiceAdventure293", 2); // Flowers for You; Flee this creepy scene
-  set("choiceAdventure221", 1); // A Chiller Night (1); Study the hobos' dance moves
-  set("choiceAdventure222", 1); // A Chiller Night (2); Dance with them
-  set("choiceAdventure204", 2); // Skip adventure when Zombo is up
-
-  // if danceCount not passed, check the property
-  if (danceCount === 0) {
-    danceCount = get(DANCE_PROP, 0);
-  }
-
-  if (danceCount >= 5) {
-    set("choiceAdventure208", 1); // Ah, So That's Where They've All Gone; Send the flowers to The Heap
-  }
-
-  const upkeepWeaponDamage = () => {
-    if (myMp() < 130) eat($item`magical sausage`);
-    ensureEffect($effect`Carol of the Bulls`);
-    ensureEffect($effect`Song of the North`);
-  };
-
-  upkeepWeaponDamage();
-
-  sideZoneLoop(
-    $location`The Ancient Hobo Burial Ground`,
-    true,
-    Macro.attack().repeat(),
-    function () {
-      let done = false;
-      const lastEncounter = get("lastEncounter");
-      if (lastEncounter.includes("A Chiller Night")) {
-        danceCount++;
-        if (danceCount >= 5) {
-          set("choiceAdventure208", 1); // Ah, So That's Where They've All Gone; Send the flowers to The Heap
-        }
-      } else if (
-        danceCount >= 5 &&
-        lastEncounter.includes("Ah, So That's Where They've All Gone")
-      ) {
-        set("choiceAdventure208", 2); // Ah, So That's Where They've All Gone; Tiptoe through the tulips
-        danceCount = 0;
-      } else if (lastEncounter.includes("Welcome To You!")) {
-        print("Zombo is up", "blue");
-        done = true;
-      }
-
-      set(DANCE_PROP, danceCount);
-
-      if (!done) {
-        upkeepWeaponDamage();
-      }
-
-      return { done };
-    }
-  );
-  print("Done in AHBG", "blue");
-}
-
-function runPLD(maxFlimFlams = 10) {
-  const diverts = getHoboCountsRe(
-    /cold water out of Exposure Esplanade \((\d+) turns?\)/gm
-  );
-  if (diverts < 21) {
-    if (!userConfirm("Do AHBG before 21 water diverts?", 10000, false)) return;
-  }
-
-  let img = /purplelightdistrict(\d+).gif/.exec(
-    visitUrl("clan_hobopolis.php?place=8")
-  );
-  let flimflams = getHoboCountsRe(/flimflammed some hobos \((\d+) turns?\)/gm);
-
-  if (
-    diverts + flimflams >= 21 &&
-    img != null &&
-    parseInt(img[1]) < 9 &&
-    flimflams < maxFlimFlams
-  ) {
-    print("Starting barfights.", "purple");
-    set("choiceAdventure223", 1); // Getting Clubbed; Try to get inside
-  } else {
-    print("Flimflamming the crowd.", "purple");
-    set("choiceAdventure223", 3); // Getting Clubbed; Try to flimflam the crowd
-  }
-
-  set("choiceAdventure224", 2); // Exclusive!; Pick several fights
-  set("choiceAdventure294", 1); // Maybe It's a Sexy Snake! Take a Chance?
-  set("choiceAdventure205", 2); // Don't fight Chester
-
-  sideZoneLoop($location`The Purple Light District`, false, MACRO_KILL, () => {
-    const lastEncounter = get("lastEncounter");
-    let done = false;
-
-    if (
-      lastEncounter.includes("Getting Clubbed") ||
-      lastEncounter.includes("Exclusive!")
-    ) {
-      img = /purplelightdistrict(\d+).gif/.exec(
-        visitUrl("clan_hobopolis.php?place=8")
-      );
-
-      if (get("choiceAdventure223") === 3) {
-        // Flimflamming the crowd
-        flimflams++;
-
-        if (flimflams >= maxFlimFlams) {
-          print("Switching to barfights.", "purple");
-          set("choiceAdventure223", 1); // Getting Clubbed; Try to get inside
-        }
-      } else if (
-        get("choiceAdventure223") === 1 &&
-        flimflams < maxFlimFlams &&
-        img != null &&
-        parseInt(img[1]) >= 9
-      ) {
-        print("Switching to get flimflams.", "purple");
-        set("choiceAdventure223", 3); // Getting Clubbed; Try to flimflam the crowd
-      }
-    } else if (lastEncounter.match(/Van, Damn/)) {
-      print("Chester is up.", "purple");
-      done = true;
-    }
-
-    return { done };
-  });
-
-  print(
-    `Done in PLD. At ${getHoboCountsRe(
-      /flimflammed some hobos \((\d+) turns?\)/gm
-    )} flimflams.`,
-    "purple"
-  );
-}
-
 function lastAdventureWasSuccessfulCombat(): boolean {
   return lastAdventureText().includes(myName() + " wins the fight!");
 }
@@ -674,12 +599,7 @@ function tiresToKills(tires: number): number {
 }
 
 function runBB(onStack = 0, stack1 = 0, stack2 = 0) {
-  print(
-    `Running BB with ${onStack} on the stack, ${stack1} in stack 1 and ${stack2} in stack 2`,
-    "red"
-  );
   //TODO: store counts in new property or whatever storage mafia uses.
-  //TODO: Real calculation for the last stack.
   setChoice(206, 2); // Getting Tired; Toss the tire on the fire gently
   setChoice(207, 2); // Hot Dog! I Mean... Door!; Leave the door be
   setChoice(213, 2); // Piping Hot; Leave the valve alone
@@ -696,23 +616,28 @@ function runBB(onStack = 0, stack1 = 0, stack2 = 0) {
   const stackKills: { [key: number]: number } = { 1: 0, 2: 0 };
   let tiresToThrow = TIRE_COUNT;
 
-  //TODO: handle if we specified stack sizes but haven't thrown violent?
   if (tirevalanches >= 1) {
+    stack1 = stack1 || TIRE_COUNT;
     stackKills[1] = tiresToKills(stack1);
   }
   if (tirevalanches > 1) {
-    // if we have more than 2, you're on your own?
+    stack2 = stack2 || TIRE_COUNT;
     stackKills[2] = tiresToKills(stack2);
   }
 
-  if (onStack >= tiresToThrow) {
-    set("choiceAdventure206", 1); // Getting Tired; Toss the tire on the fire violently
+  print(
+    `Running BB with ${tireCount} on the stack, ${stack1} in stack 1 and ${stack2} in stack 2`,
+    "red"
+  );
+
+  if (tireCount >= tiresToThrow) {
+    setChoice(206, 1); // Getting Tired; Toss the tire on the fire violently
   }
 
   const changeTireStackPrefIfNeeded = () => {
     if (tireCount >= tiresToThrow) {
       print("Going to throw violently.", "red");
-      set("choiceAdventure206", 1); // Getting Tired; Toss the tire on the fire violently
+      setChoice(206, 1); // Getting Tired; Toss the tire on the fire violently
     }
   };
 
@@ -725,9 +650,6 @@ function runBB(onStack = 0, stack1 = 0, stack2 = 0) {
         tiresNeeded++;
       }
       tiresToThrow = tiresNeeded;
-      print(
-        `kills: ${kills} Stack 1: ${stackKills[1]} Stack 2: ${stackKills[2]} left: ${hobosLeft}`
-      );
       print(`Tires needed on stack 3: ${tiresNeeded}`, "red");
       changeTireStackPrefIfNeeded();
     }
@@ -744,7 +666,7 @@ function runBB(onStack = 0, stack1 = 0, stack2 = 0) {
       if (get("choiceAdventure206") === 1) {
         tirevalanches++;
         stackKills[tirevalanches] = tiresToKills(tireCount);
-        set("choiceAdventure206", 2); // Getting Tired; Toss the tire on the fire gently
+        setChoice(206, 2); // Getting Tired; Toss the tire on the fire gently
         tireCount = 0;
       } else {
         tireCount++;
@@ -798,19 +720,25 @@ const prepForSkins = (skinsLeft: number): Macro => {
     if (myMp() < 130) eat($item`magical sausage`);
     useSkill($skill`Carol of the Bulls`);
     useSkill($skill`Song of the North`);
+    useSkill($skill`Blood Frenzy`);
   }
-  ensureEffect($effect`Confidence of the Votive`, skinsLeft);
-  ensureEffect($effect`Baconstoned`, skinsLeft);
-  if (!outfit("hobo_physical")) {
-    throw new Error("Can't equip physical outfit");
+
+  const forceEquip = $items`lucky gold ring, mafia thumb ring, Mr. Cheeng's spectacles`;
+  if (isDrunk()) {
+    forceEquip.push($item`Drunkula's wineglass`);
+  } else {
+    forceEquip.push($item`garbage sticker`);
   }
+  maximizeCached(["10 weapon dmg percent", "muscle"], {
+    forceEquip,
+  });
   return Macro.attack().repeat();
 };
 
 const runTS = ({
   getFood = false,
-  input = "untuned",
-  hoboKills,
+  input = "tuned",
+  hoboKills = 36,
 }: tsArg): void => {
   let part: Part;
   let stopAfterFood: boolean;
@@ -905,15 +833,127 @@ const runTS = ({
   });
 };
 
+function prepFrosty() {
+  if (get("expressCardUsed")) {
+    print("Already used PYEC.", "red");
+    return;
+  }
+
+  setClan("Alliance From Heck");
+  if (stashAmount($item`Platinum Yendorian Express Card`) < 1) {
+    print("PYEC not currently available.", "red");
+    return;
+  }
+  takeStash(1, $item`Platinum Yendorian Express Card`);
+
+  const curClan = getClanName();
+  setClan("Bonus Adventures from Hell");
+  cliExecute("fold wad of used tape");
+  equip($item`wad of used tape`); //item
+  equip($slot`weapon`, $item`Fourth of May Cosplay Saber`); //item
+  equip($slot`offhand`, $item`party whip`); //item
+  equip($item`Great Wolf's beastly trousers`); // item
+  equip($item`snowpack`); // item
+  equip($item`BGE 'cuddly critter' shirt`); // item // groovy prism necklace if more damage needed
+  equip($slot`acc1`, $item`Pocket Square of Loathing`); // cold res
+  equip($slot`acc2`, $item`Mayor Ghost's sash`); //item
+  equip($slot`acc3`, $item`Belt of Loathing`); //item
+
+  useFamiliar($familiar`Jumpsuited Hound Dog`);
+
+  // init (Ol' Scratch)
+  ensureEffect($effect`Springy Fusilli`);
+  ensureEffect($effect`Song of Slowness`);
+  ensureEffect($effect`Resting Beach Face`);
+
+  // passive damage
+  ensureEffect($effect`Permanent Halloween`);
+  ensureEffect($effect`Boner Battalion`);
+  ensureEffect($effect`Feeling Nervous`);
+  ensureEffect($effect`Frigidalmatian`);
+  ensureEffect($effect`Mathematically Precise`);
+  ensureEffect($effect`Bendin' Hell`);
+
+  // combat items
+  retrieveItem(40, $item`electronics kit`);
+
+  // hp
+  getEffect($effect`Starry-Eyed`);
+  ensureEffect($effect`Triple-Sized`);
+  getEffect($effect`Lack of Body-Building`);
+  ensureEffect($effect`Plump and Chubby`);
+  ensureEffect($effect`Blood Bubble`);
+
+  // res
+  getEffect($effect`Cold as Nice`);
+  ensureEffect($effect`Feeling Peaceful`);
+  ensureEffect($effect`Oiled-Up`);
+  ensureEffect($effect`Spiro Gyro`);
+  ensureEffect($effect`Ancient Protected`);
+
+  // item drop
+  cliExecute("synthesize collection");
+  ensureEffect($effect`Fat Leon's Phat Loot Lyric`);
+  ensureEffect($effect`Disco Leer`);
+  ensureEffect($effect`The Spirit of Taking`);
+  ensureEffect($effect`Singer's Faithful Ocelot`);
+  ensureEffect($effect`Blood Bond`);
+  ensureEffect($effect`Leash of Linguini`);
+  ensureEffect($effect`Empathy`);
+  getEffect($effect`Quadrilled`);
+  getEffect($effect`Uncucumbered`);
+  getEffect($effect`Do I Know You From Somewhere?`);
+  getEffect($effect`Hustlin'`);
+  ensureEffect($effect`Bubble Vision`);
+  ensureEffect($effect`Polka Face`);
+  ensureEffect($effect`Steely-Eyed Squint`);
+  // ensureEffect($effect`Robot Friends`);
+  // ensureEffect($effect`El Aroma de Salsa`);
+  // ensureEffect($effect`Unusual Perspective`);
+  // ensureEffect($effect`Blue Tongue`);
+  // ensureEffect($effect`Cupcake of Choice`);
+  // ensureEffect($effect`Holiday Bliss`);
+  // ensureEffect($effect`Heart of Lavender`);
+  // ensureEffect($effect`Things Man Was Not Meant to Eat`);
+
+  if (
+    myClass() === $class`Pastamancer` &&
+    myThrall().skill !== $skill`Bind Spice Ghost`
+  ) {
+    useSkill($skill`Bind Spice Ghost`);
+  }
+
+  restoreHp(1000);
+
+  use($item`Platinum Yendorian Express Card`);
+  setClan("Alliance From Heck");
+  putStash(1, $item`Platinum Yendorian Express Card`);
+  setClan(curClan);
+}
+
+const HOBO_MOOD = new Mood();
+HOBO_MOOD.skill($skill`Astral Shell`)
+  .skill($skill`Get Big`)
+  .skill($skill`Blood Bubble`)
+  .skill($skill`Elemental Saucesphere`)
+  .skill($skill`Feel Excitement`)
+  .skill($skill`Rage of the Reindeer`)
+  .skill($skill`Stevedave's Shanty of Superiority`)
+  .skill($skill`Springy Fusilli`)
+  .skill($skill`Blessing of the War Snapper`)
+  .skill($skill`Carol of the Hells`);
+
 export function main(input: string): void {
   setAutoAttack(0);
-  cliExecute("mood hobo");
+  cliExecute("mood apathetic");
   cliExecute("ccs hobo");
   cliExecute("boombox food");
   cliExecute("mcd 0");
   useSkill($skill`Spirit of Nothing`); // Don't be an idiot
   setFamiliar();
   setChoice(1387, 3); // saber force item drop
+
+  HOBO_MOOD.effect($effect`Plump and Chubby`);
 
   const actions = input.split(" ");
 
@@ -928,6 +968,9 @@ export function main(input: string): void {
   }
 
   switch (actions[0]) {
+    case "frosty":
+      prepFrosty();
+      break;
     case "clan":
       setClan(input.substring("clan ".length));
       break;
@@ -937,21 +980,12 @@ export function main(input: string): void {
       runSewer();
       break;
     case "ee":
-      runEE(actions[1] ? parseInt(actions[1]) : 70);
-      break;
-    case "heap":
-      runTheHeap();
-      break;
-    case "ahbg":
-      runAHBG(actions[1] ? parseInt(actions[1]) : 0);
-      break;
-    case "pld":
-      runPLD();
+      runEE(actions[1] ? parseInt(actions[1]) : DEFAULT_ICICLES);
       break;
     case "bb": {
       const numTires = actions[1] ? parseInt(actions[1]) : 0;
-      const stack1Count = actions[2] ? parseInt(actions[2]) : -1;
-      const stack2Count = actions[3] ? parseInt(actions[3]) : -1;
+      const stack1Count = actions[2] ? parseInt(actions[2]) : 0;
+      const stack2Count = actions[3] ? parseInt(actions[3]) : 0;
       runBB(numTires, stack1Count, stack2Count);
       break;
     }

@@ -17,6 +17,8 @@ import {
   myName,
   cliExecute,
   buy,
+  turnsPlayed,
+  print,
 } from "kolmafia";
 import {
   $familiar,
@@ -31,7 +33,11 @@ import {
   set,
   have,
 } from "libram";
-import { ensureEffect } from "./lib";
+import {
+  ensureEffect,
+  fightSausageIfGuaranteed,
+  grabColdMedicine,
+} from "./lib";
 
 function gearUp(): boolean {
   if (!have($item`amulet coin`)) {
@@ -98,16 +104,30 @@ export function main(): void {
         .trySkill($skill`Snokebomb`)
         .trySkill($skill`Show them your ring`)
         .trySkill($skill`Reflex Hammer`)
+        .trySkill($skill`Batter Up!`)
         .item($item`Daily Affirmation: Be a Mind Master`)
         .abort()
     )
-    .skill($skill`Sing Along`)
-    .trySkill($skill`%fn, spit on them!`)
-    .trySkill($skill`Furious Wallop`)
-    .skill($skill`Saucestorm`)
+    .if_(
+      'monstername "sausage goblin"',
+      Macro.skill($skill`Sing Along`)
+        .trySkill($skill`Furious Wallop`)
+        .skill($skill`Awesome Balls of Fire`)
+        .repeat()
+    )
+    .if_(
+      'monstername "blur"',
+      Macro.skill($skill`Sing Along`)
+        .trySkill($skill`%fn, spit on them!`)
+        .trySkill($skill`Furious Wallop`)
+        .skill($skill`Saucestorm`)
+    )
     .setAutoAttack();
 
   while (myAdventures() > 0) {
+    fightSausageIfGuaranteed();
+    grabColdMedicine();
+
     if (!retrieveItem($item`Daily Affirmation: Be a Mind Master`)) {
       abort("Could not get Daily Affirmation: Be a Mind Master");
     }

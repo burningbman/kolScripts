@@ -24,6 +24,14 @@ import {
   numericModifier,
   shopPrice,
   runCombat,
+  retrieveItem,
+  equip,
+  adv1,
+  eat,
+  restoreMp,
+  haveEffect,
+  maximize,
+  chew,
 } from "kolmafia";
 import {
   $familiar,
@@ -37,8 +45,14 @@ import {
   Macro,
   $skill,
   have,
+  adventureMacroAuto,
 } from "libram";
-import { ensureEffect, getPropertyInt, mapMonster, setChoice } from "./lib";
+import {
+  ensureEffect,
+  mapMonster,
+  sausageFightGuaranteed,
+  setChoice,
+} from "./lib";
 
 const runVolcano = (): void => {
   // mallbuy a one-day ticket if needed
@@ -60,9 +74,9 @@ const runVolcano = (): void => {
     let cheapestCost = 1000000;
     let cheapestOption = -1;
     for (let i = 1; i <= 3; i++) {
-      const item = toItem(getPropertyInt("_volcanoItem" + i));
+      const item = toItem(get("_volcanoItem" + i));
       const itemCost = mallPrice(item);
-      const itemCount = getPropertyInt("_volcanoItemCount" + i);
+      const itemCount = get<number>("_volcanoItemCount" + i);
       const cost = itemCount * itemCost;
       print(`Option ${i}: ${itemCount} ${item.name} @ ${itemCost} ea`);
       if (cost !== 0 && cost < cheapestCost) {
@@ -72,8 +86,8 @@ const runVolcano = (): void => {
     }
     if (cheapestOption !== -1) {
       buy(
-        getPropertyInt("_volcanoItemCount" + cheapestOption),
-        toItem(getPropertyInt("_volcanoItem" + cheapestOption))
+        get<number>("_volcanoItemCount" + cheapestOption),
+        toItem(get("_volcanoItem" + cheapestOption))
       );
       visitUrl("place.php?whichplace=airport_hot&action=airport4_questhub");
       runChoice(cheapestOption);
@@ -103,19 +117,36 @@ const runVolcano = (): void => {
   }
 };
 
+const getItemPrice = (item: Item): number => {
+  const shop = shopPrice(item);
+  const mall = mallPrice(item);
+
+  if (shop === 999999999 || mall <= shop) {
+    return mall - 1;
+  }
+
+  return shop;
+};
+
 const getDrumMacMPA = (): number => {
   outfit("drum mac farm");
-  const meat = (((120 + 25) * (numericModifier("meat drop") + 100)) / 100) * 3;
-  const drumMac = shopPrice($item`drum machine`);
-  const palmFrond = shopPrice($item`palm frond`);
-  const waterLily = shopPrice($item`carbonated water lily`);
+  const cheeng = 180;
+  const thumbMultiplier = 1.05;
+  const baseMeat = 120 + 25;
+
+  const meat =
+    ((baseMeat * (numericModifier("meat drop") + 100)) / 100) * 3 + cheeng;
+  const drumMac = getItemPrice($item`drum machine`);
+  const palmFrond = getItemPrice($item`palm frond`);
+  const waterLily = getItemPrice($item`carbonated water lily`);
   const clover = Math.min(
     mallPrice($item`ten-leaf clover`),
     mallPrice($item`disassembled clover`)
   );
   return Math.floor(
-    (20 * (meat + drumMac + 130 / 6 + (palmFrond + waterLily) / 3) - clover) /
-      21
+    ((20 * (meat + drumMac + 130 / 6 + (palmFrond + waterLily) / 3) - clover) /
+      21) *
+      thumbMultiplier
   );
 };
 
@@ -145,6 +176,7 @@ const getDistensionAndDogHairPills = (): void => {
 const pullDeskBell = (): void => {
   // cargo shorts
   if (!get<boolean>("_cargoPocketEmptied")) {
+    getHallPasses();
     getDistensionAndDogHairPills();
     cliExecute("mom stats");
     const emptiedPocketsPref = getProperty("cargoPocketsEmptied");
@@ -158,7 +190,7 @@ const pullDeskBell = (): void => {
     }
 
     if (!have($item`spice melange`)) {
-      buy(1, $item`spice melange`, 250000);
+      buy(1, $item`spice melange`, 275000);
     }
 
     if (availableAmount($item`Frosty's frosty mug`) < 5) {
@@ -171,7 +203,34 @@ const pullDeskBell = (): void => {
   }
 };
 
+const getHallPasses = (): void => {
+  if (!have($item`Mer-kin hallpass`)) {
+    buy($item`Mer-kin hallpass`, 10, 6500);
+  }
+
+  setChoice(401, 2);
+  setChoice(705, 4);
+  chew($item`sea jelly`);
+  outfit("Mer-kin Gladiatorial Gear");
+  useFamiliar($familiar`none`);
+  equip($item`makeshift SCUBA gear`);
+  retrieveItem($item`Mer-kin bunwig`);
+
+  while (have($effect`Fishy`) && have($item`Mer-kin hallpass`)) {
+    adv1($location`Mer-kin Elementary School`);
+  }
+
+  const price = Math.max(4500, getItemPrice($item`Mer-kin wordquiz`));
+  putShop(
+    price,
+    0,
+    availableAmount($item`Mer-kin wordquiz`),
+    $item`Mer-kin wordquiz`
+  );
+};
+
 export function main(args: string): void {
+  setChoice(1455, 5);
   args = args || "";
   set("logPreferenceChange", false);
   let doVolcano = false;
@@ -200,18 +259,49 @@ export function main(args: string): void {
     cliExecute("CONSUME ALL");
   }
 
+  if (sausageFightGuaranteed()) {
+    equip($item`Kramco Sausage-o-Matic™`);
+    equip($item`backup camera`);
+
+    Macro.if_(
+      '!monstername "sausage goblin"',
+      Macro.skill($skill`Back-Up to your Last Enemy`)
+    )
+      .skill($skill`Sing Along`)
+      .skill($skill`Furious Wallop`)
+      .skill($skill`Awesome Balls of Fire`)
+      .repeat()
+      .setAutoAttack();
+
+    while (get("_backUpUses") < 11) {
+      restoreMp(400);
+      adv1($location`Noob Cave`);
+    }
+
+    eat($item`magical sausage`, 23 - get("_sausagesEaten"));
+  }
+
   if (myFullness() === fullnessLimit()) {
     if (doVolcano) {
       runVolcano();
     } else {
+      outfit("drum mac farm");
+
+      if (haveEffect($effect`Merry Smithsness`) < myAdventures()) {
+        const numFlaskfull = Math.ceil(myAdventures() / 150);
+        retrieveItem($item`Flaskfull of Hollow`, numFlaskfull);
+        use(numFlaskfull, $item`Flaskfull of Hollow`);
+      }
+
       cliExecute("bb_drumMacFarm");
 
       for (const item of [
         $item`drum machine`,
         $item`carbonated water lily`,
         $item`palm frond`,
+        toItem(`Homebodyl™`), //$item`Homebodyl™`,
       ]) {
-        putShop(shopPrice(item), 0, availableAmount(item), item);
+        putShop(getItemPrice(item), 0, availableAmount(item), item);
       }
       autosell(availableAmount($item`hot date`), $item`hot date`);
       use(0, $item`Gathered Meat-Clip`);

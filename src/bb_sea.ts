@@ -1,12 +1,13 @@
 import {
   adv1,
   cliExecute,
-  closetAmount,
   equip,
+  familiarWeight,
   haveEffect,
   itemAmount,
   maximize,
   myAdventures,
+  myFamiliar,
   myMaxhp,
   mySpleenUse,
   print,
@@ -18,26 +19,67 @@ import {
   spleenLimit,
   use,
   useFamiliar,
-  visit,
+  useSkill,
   visitUrl,
+  weightAdjustment,
 } from "kolmafia";
 import {
   $effect,
   $familiar,
   $item,
+  $items,
   $location,
   $skill,
+  $stats,
   adventureMacro,
   ensureEffect,
   get,
   have,
   Macro,
+  maximizeCached,
+  Mood,
 } from "libram";
-import { setChoice, shrug, tryUse } from "./lib";
+import {
+  ensureItem,
+  getFreeKills,
+  myFamiliarWeight,
+  setChoice,
+  shrug,
+  tryUse,
+} from "./lib";
+
+let MOOD_BASE = new Mood();
+MOOD_BASE.effect($effect`Empathy`);
+MOOD_BASE.effect($effect`Blood Bond`);
+MOOD_BASE.effect($effect`Leash of Linguini`);
+MOOD_BASE.effect($effect`Blood Bubble`);
+
+let MOOD_NON_COMBAT = new Mood();
+MOOD_NON_COMBAT.effect($effect`Invisible Avatar`);
+MOOD_NON_COMBAT.effect($effect`Smooth Movements`);
+MOOD_NON_COMBAT.effect($effect`Feeling Lonely`);
+MOOD_NON_COMBAT.effect($effect`The Sonata of Sneakiness`);
+
+let MOOD_COMBAT = new Mood();
+MOOD_COMBAT.effect($effect`Musk of the Moose`);
+MOOD_COMBAT.effect($effect`Carlweather's Cantata of Confrontation`);
+
+function adventure(location: Location, macro: Macro) {
+  if (!haveEffect($effect`Fishy`)) {
+    throw "Lost fishy effect";
+  }
+  if (myAdventures() === 0) {
+    throw "No more adventures";
+  }
+  putCloset($item`sand dollar`, itemAmount($item`sand dollar`));
+  restoreHp(myMaxhp());
+  MOOD_BASE.execute();
+  ensureLassos(1);
+  adventureMacro(location, macro);
+}
 
 function wrapZone(zoneFunction: () => void, action: string) {
   const startAdventureCount = myAdventures();
-
   zoneFunction();
 
   const usedAdventures = startAdventureCount - myAdventures();
@@ -46,17 +88,43 @@ function wrapZone(zoneFunction: () => void, action: string) {
   return usedAdventures;
 }
 
-const FREE_RUN_MACRO = Macro.externalIf(
-  get("lassoTraining") !== "expertly",
-  Macro.item($item`sea lasso`)
-)
-  .trySkill($skill`Feel Hatred`)
-  .trySkill($skill`Snokebomb`)
-  .trySkill($skill`Throw Latte on Opponent`)
-  .skill($skill`Curse of Weaksauce`)
-  .skill($skill`Micrometeorite`)
-  .skill($skill`Saucegeyser`)
-  .repeat();
+const haveBootRuns = () =>
+  get("_banderRunaways") <
+  Math.floor(
+    (familiarWeight($familiar`Pair of Stomping Boots`) + weightAdjustment()) / 5
+  );
+
+const banderReady = () =>
+  myFamiliar() === $familiar`Pair of Stomping Boots` && haveBootRuns();
+
+const getFamEquip = () =>
+  banderReady() ? $item`das boot` : $item`ittah bittah hookah`;
+
+function getFreeRuns(): Macro {
+  if (
+    !banderReady() &&
+    get("_feelHatredUsed") === 3 &&
+    get("_snokebombUsed") === 3
+  ) {
+    if (get("_latteBanishUsed")) {
+      if (get("_latteRefillsUsed") === 3) {
+        throw new Error("No more free runs avaiable.");
+      } else {
+        refillLatteIfNeeded();
+      }
+    }
+  }
+
+  return Macro.externalIf(
+    get("lassoTraining") !== "expertly",
+    Macro.item($item`sea lasso`)
+  )
+    .externalIf(banderReady(), Macro.step("runaway"))
+    .trySkill($skill`Feel Hatred`)
+    .trySkill($skill`Snokebomb`)
+    .trySkill($skill`Throw Latte on Opponent`)
+    .abort();
+}
 
 function refillLatteIfNeeded() {
   if (get("_latteBanishUsed")) {
@@ -76,64 +144,97 @@ function freeGrandpa() {
   setChoice(303, 1);
   setChoice(304, 2);
   setChoice(305, 1);
-  gearUp("-combat, +equip latte lovers member's mug,");
+  gearUp(["-combat"], { freeRun: true });
 
   while (!get("lastEncounter").includes("You've Hit Bottom")) {
     ensureLassos(1);
     nonCombat();
-    adventureMacro($location`The Marinara Trench`, FREE_RUN_MACRO);
-    refillLatteIfNeeded();
+    adventure($location`The Marinara Trench`, getFreeRuns());
   }
 }
 
-function gearUp(maximizeStr: string) {
-  const pants = get("lassoTraining") === "expertly" ? "" : "+equip sea chaps,";
-  maximize(
-    `${maximizeStr} +equip sea cowboy hat, +equip old SCUBA tank, ${pants} +equip mafia thumb ring, +equip lucky gold ring, +equip mr. cheengs spectacles`,
-    false
-  );
+function gearUp(
+  maximize: string[],
+  options?: { forceEquip?: Item[]; freeRun?: boolean; freeKill?: boolean }
+) {
+  let forceEquip = options?.forceEquip || [];
+  let bonusEquip = new Map<Item, number>();
+
+  if (get("lassoTraining") !== "expertly") {
+    forceEquip.push($item`sea chaps`);
+    forceEquip.push($item`sea cowboy hat`);
+    forceEquip.push($item`old SCUBA tank`);
+  } else {
+    forceEquip.push($item`Mer-kin gladiator mask`);
+  }
+
+  let fam = $familiar`Red-Nosed Snapper`;
+  if (options?.freeKill) {
+    forceEquip.push(...$items`The Jokester's Gun, Lil' Doctor™ bag`);
+    bonusEquip.set($item`The Jokester's Gun`, 5000);
+  }
+  if (options?.freeRun && haveBootRuns()) {
+    fam = $familiar`Pair of Stomping Boots`;
+    forceEquip.push($item`das boot`);
+    maximize.push("2 familiar weight");
+
+    // only equip latte if we don't need doctor bag
+    if (!options?.freeKill || get("_chestXRayUsed") === 3) {
+      forceEquip.push($item`latte lovers member's mug`);
+    }
+  } else {
+    forceEquip.push(
+      ...$items`mafia thumb ring, lucky gold ring, mr. cheengs spectacles`
+    );
+  }
+
+  useFamiliar(fam);
+
+  maximizeCached(maximize, {
+    forceEquip,
+    bonusEquip,
+  });
 }
 
 function nonCombat() {
   shrug($effect`Carlweather's Cantata of Confrontation`);
-  ensureEffect($effect`Invisible Avatar`);
-  ensureEffect($effect`Smooth Movements`);
-  get("_feelLonelyUsed") < 3 && ensureEffect($effect`Feeling Lonely`);
-  ensureEffect($effect`The Sonata of Sneakiness`);
+  MOOD_NON_COMBAT.execute();
 }
 
 function combat() {
   shrug($effect`Invisible Avatar`);
   shrug($effect`Feeling Lonely`);
   shrug($effect`The Sonata of Sneakiness`);
-  ensureEffect($effect`Musk of the Moose`);
-  ensureEffect($effect`Carlweather's Cantata of Confrontation`);
+  MOOD_COMBAT.execute();
 }
 
 function getTrailMap() {
   let tentIndex = 1;
-  gearUp("+combat");
+  gearUp(["combat"]);
   setChoice(313, tentIndex);
   setChoice(314, tentIndex);
   setChoice(315, tentIndex);
 
   while (!have($item`Mer-kin trailmap`)) {
     ensureLassos(1);
-    retrieveItem(2, $item`New Age healing crystal`);
+    retrieveItem(3, $item`New Age healing crystal`);
 
     if (have($item`Mer-kin lockkey`)) {
-      gearUp("-combat");
+      gearUp(["-combat"], { freeRun: true });
       nonCombat();
     } else {
+      gearUp(["+combat"], { freeKill: true });
       combat();
     }
 
-    adventureMacro(
+    adventure(
       $location`The Mer-Kin Outpost`,
       Macro.externalIf(
         get("lassoTraining") !== "expertly",
         Macro.item($item`sea lasso`)
       )
+        .externalIf(have($item`Mer-kin lockkey`), Macro.step(getFreeRuns()))
+        .externalIf(!have($item`Mer-kin lockkey`), Macro.step(getFreeKills()))
         .item([$item`New Age healing crystal`, $item`New Age hurting crystal`])
         .repeat()
     );
@@ -146,83 +247,82 @@ function getTrailMap() {
     }
 
     tryUse(1, $item`Mer-kin stashbox`);
-    putCloset($item`sand dollar`, itemAmount($item`sand dollar`));
   }
 
   use($item`Mer-kin trailmap`);
 }
 
 function freeBigBrother() {
-  setChoice(299, 1);
-  gearUp("-combat, +equip latte lovers member's mug,");
+  gearUp(["-combat"], { freeRun: true });
 
   while (!get("lastEncounter").includes("Down at the Hatch")) {
-    ensureLassos(1);
     nonCombat();
-    adventureMacro(
-      $location`The Wreck of the Edgar Fitzsimmons`,
-      FREE_RUN_MACRO
-    );
-    refillLatteIfNeeded();
+    adventure($location`The Wreck of the Edgar Fitzsimmons`, getFreeRuns());
   }
 }
 
 function freeLittleBrother() {
-  maximize(
-    `+equip sea cowboy hat, +equip old SCUBA tank, +equip sea chaps, +equip mafia thumb ring, +equip lucky gold ring, +equip Powerful Glove`,
-    false
-  );
-  restoreHp(myMaxhp());
-
-  Macro.while_(
-    `!monstername "Neptune flytrap"`,
-    Macro.item($item`sea lasso`, $item`New Age healing crystal`).trySkill(
-      $skill`Macrometeorite`
-    )
-  )
-    .if_(
-      `monstername "Neptune flytrap"`,
-      new Macro()
-        .trySkill($skill`Transcendent Olfaction`)
-        .item($item`sea lasso`, $item`New Age healing crystal`)
-        .item([$item`New Age healing crystal`, $item`New Age hurting crystal`])
-        .repeat()
-    )
-    .setAutoAttack();
+  gearUp(["meat drop"], {
+    freeRun: true,
+    freeKill: true,
+  });
 
   while (!have($item`wriggling flytrap pellet`)) {
-    ensureLassos(5);
-    retrieveItem(10, $item`New Age healing crystal`);
-    adv1($location`An Octopus's Garden`);
+    ensureLassos(1);
+    ensureItem(3, $item`New Age healing crystal`);
+    adventure(
+      $location`An Octopus's Garden`,
+      Macro.if_(
+        `!monstername "Neptune flytrap"`,
+        Macro.step(getFreeRuns())
+      ).if_(
+        `monstername "Neptune flytrap"`,
+        new Macro()
+          .trySkill($skill`Transcendent Olfaction`)
+          .item($item`sea lasso`)
+          .step(getFreeKills())
+          .item([
+            $item`New Age healing crystal`,
+            $item`New Age hurting crystal`,
+          ])
+          .repeat()
+      )
+    );
   }
 }
 
-function getLotsOfFishy() {
-  if (!get("_freePillKeeperUsed")) {
-    print("Using free pill keeper to get fishy", "green");
-    cliExecute("pillkeeper semirare");
-  } else if (mySpleenUse() < spleenLimit() - 3) {
-    print("Using 3 spleen and pill keeper to get fishy", "green");
-    cliExecute("pillkeeper semirare");
-  } else if (get("currentMojoFilters") === 0) {
-    print("Using 3 mojo filters and pill keeper to get fishy", "green");
-    use($item`mojo filter`, 3);
-    cliExecute("pillkeeper semirare");
-  }
+// function getLotsOfFishy(): boolean {
+//   equip($item`old SCUBA tank`);
+//   let pillkeeperAvailable = true;
 
-  adv1($location`The Brinier Deepers`);
-}
+//   if (
+//     get("_freePillKeeperUsed") &&
+//     spleenLimit() + 3 - get("currentMojoFilters") - mySpleenUse() >= 3
+//   ) {
+//     const neededMojoFilters = Math.min(spleenLimit() - mySpleenUse(), 3);
+//     use($item`mojo filter`, 3);
+//   } else {
+//     pillkeeperAvailable = false;
+//   }
+
+//   if (pillkeeperAvailable) {
+//     cliExecute("pillkeeper semirare");
+//     adventure($location`The Brinier Deepers`, Macro.abort());
+//   }
+//   return pillkeeperAvailable;
+// }
 
 function getSeahorse() {
+  gearUp([], {
+    freeRun: true,
+    forceEquip: $items`mafia pinky ring, latte lovers member's mug`,
+  });
   retrieveItem($item`sea cowbell`, 3);
-  retrieveItem($item`sea lasso`, 1);
-  maximize(
-    `+equip mer-kin gladiator mask, +equip mafia thumb ring, +equip Lil' doctor bag, +equip mafia middle finger ring`,
-    false
-  );
+
   while (!get("seahorseName")) {
-    retrieveItem(2, $item`New Age healing crystal`);
-    adventureMacro(
+    retrieveItem(3, $item`New Age healing crystal`);
+    ensureLassos(1);
+    adventure(
       $location`The Coral Corral`,
       Macro.if_(
         'monstername "Wild seahorse"',
@@ -232,6 +332,8 @@ function getSeahorse() {
       )
         .trySkill($skill`Show them your ring`)
         .trySkill($skill`Reflex Hammer`)
+        .step(getFreeKills())
+        .step(getFreeRuns())
         .item([$item`New Age healing crystal`, $item`New Age hurting crystal`])
         .repeat()
     );
@@ -240,11 +342,6 @@ function getSeahorse() {
 
 function setup() {
   // setup fam and breathing gear
-  useFamiliar($familiar`Red-Nosed Snapper`);
-  equip($item`ittah bittah hookah`);
-  equip($item`Mer-kin gladiator mask`);
-  retrieveItem(1, $item`sea chaps`);
-  retrieveItem(1, $item`sea cowboy hat`);
   if (!have($item`old SCUBA tank`)) {
     visitUrl("place.php?whichplace=sea_oldman&action=oldman_oldman");
     visitUrl(
@@ -253,6 +350,9 @@ function setup() {
     );
   }
   cliExecute("ccs garbo");
+  cliExecute("mood apathetic");
+
+  setChoice(299, 1); // free Big Brother
 }
 
 function getFishy() {
@@ -262,9 +362,9 @@ function getFishy() {
     if (!haveEffect($effect`Fishy`)) throw "Did not get fishy from pipe.";
   }
 
-  if (haveEffect($effect`Fishy`) <= 10) {
-    getLotsOfFishy();
-  }
+  // if (haveEffect($effect`Fishy`) <= 10) {
+  //   getLotsOfFishy();
+  // }
 }
 
 export function main(): void {
@@ -299,8 +399,8 @@ export function main(): void {
   }
 
   if (
-    get("questS02Monkees") === "step6" ||
-    get("questS02Monkees") === "step7"
+    !get("corralUnlocked") &&
+    (get("questS02Monkees") === "step6" || get("questS02Monkees") === "step7")
   ) {
     adventuresUsed += wrapZone(getTrailMap, "get the trail map");
     visitUrl("monkeycastle.php?action=grandpastory&topic=currents");
@@ -311,19 +411,22 @@ export function main(): void {
   }
 
   if (get("seahorseName")) {
-    maximize(
-      "hp, mp, +outfit Clothing of Loathing, +equip old SCUBA tank",
-      false
-    );
-    restoreHp(myMaxhp());
-    restoreMp(1200);
-    retrieveItem($item`warbear whosit`, 12);
-    visitUrl("sea_merkin.php?action=temple");
-    runChoice(1);
-    runChoice(1);
-    runChoice(1);
-    // TODO fight
-    runChoice(1);
+    if (!$stats`Mysticality,Moxie,Muscle`.find((stat) => stat < 150)) {
+      maximize(
+        `hp, mp, +outfit Clothing of Loathing, +equip old SCUBA tank, +equip ${getFamEquip()}`,
+        false
+      );
+      restoreHp(myMaxhp());
+      restoreMp(1200);
+      retrieveItem($item`warbear whosit`, 12);
+      print("ready for dad", "green");
+      // visitUrl("sea_merkin.php?action=temple");
+      // runChoice(1);
+      // runChoice(1);
+      // runChoice(1);
+      // // TODO fight
+      // runChoice(1);
+    }
   }
 
   print(`Used a total of ${adventuresUsed} adventures.`, "green");
