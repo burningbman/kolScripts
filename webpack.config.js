@@ -15,6 +15,7 @@ module.exports = {
         bb_logout: './src/bb_logout.ts',
         bb_runLove: './src/bb_runLove.ts',
         bb_sea: './src/bb_sea.ts',
+        bb_crimbo: './src/bb_crimbo.ts',
     },
     mode: 'development',
     devtool: false,

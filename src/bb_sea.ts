@@ -1,7 +1,5 @@
 import {
-  adv1,
   cliExecute,
-  equip,
   familiarWeight,
   haveEffect,
   itemAmount,
@@ -9,17 +7,13 @@ import {
   myAdventures,
   myFamiliar,
   myMaxhp,
-  mySpleenUse,
   print,
   putCloset,
   restoreHp,
   restoreMp,
   retrieveItem,
-  runChoice,
-  spleenLimit,
   use,
   useFamiliar,
-  useSkill,
   visitUrl,
   weightAdjustment,
 } from "kolmafia";
@@ -32,35 +26,27 @@ import {
   $skill,
   $stats,
   adventureMacro,
-  ensureEffect,
   get,
   have,
   Macro,
   maximizeCached,
   Mood,
 } from "libram";
-import {
-  ensureItem,
-  getFreeKills,
-  myFamiliarWeight,
-  setChoice,
-  shrug,
-  tryUse,
-} from "./lib";
+import { ensureItem, getFreeKills, setChoice, shrug, tryUse } from "./lib";
 
-let MOOD_BASE = new Mood();
+const MOOD_BASE = new Mood();
 MOOD_BASE.effect($effect`Empathy`);
 MOOD_BASE.effect($effect`Blood Bond`);
 MOOD_BASE.effect($effect`Leash of Linguini`);
 MOOD_BASE.effect($effect`Blood Bubble`);
 
-let MOOD_NON_COMBAT = new Mood();
+const MOOD_NON_COMBAT = new Mood();
 MOOD_NON_COMBAT.effect($effect`Invisible Avatar`);
 MOOD_NON_COMBAT.effect($effect`Smooth Movements`);
 MOOD_NON_COMBAT.effect($effect`Feeling Lonely`);
 MOOD_NON_COMBAT.effect($effect`The Sonata of Sneakiness`);
 
-let MOOD_COMBAT = new Mood();
+const MOOD_COMBAT = new Mood();
 MOOD_COMBAT.effect($effect`Musk of the Moose`);
 MOOD_COMBAT.effect($effect`Carlweather's Cantata of Confrontation`);
 
@@ -144,9 +130,9 @@ function freeGrandpa() {
   setChoice(303, 1);
   setChoice(304, 2);
   setChoice(305, 1);
-  gearUp(["-combat"], { freeRun: true });
 
   while (!get("lastEncounter").includes("You've Hit Bottom")) {
+    gearUp(["-combat"], { freeRun: true });
     ensureLassos(1);
     nonCombat();
     adventure($location`The Marinara Trench`, getFreeRuns());
@@ -157,8 +143,11 @@ function gearUp(
   maximize: string[],
   options?: { forceEquip?: Item[]; freeRun?: boolean; freeKill?: boolean }
 ) {
-  let forceEquip = options?.forceEquip || [];
-  let bonusEquip = new Map<Item, number>();
+  const forceEquip = options?.forceEquip || [];
+  const bonusEquip = new Map<Item, number>();
+  bonusEquip.set($item`mafia thumb ring`, 500);
+  bonusEquip.set($item`lucky gold ring`, 500);
+  bonusEquip.set($item`Mr. Cheeng's spectacles`, 500);
 
   if (get("lassoTraining") !== "expertly") {
     forceEquip.push($item`sea chaps`);
@@ -170,22 +159,17 @@ function gearUp(
 
   let fam = $familiar`Red-Nosed Snapper`;
   if (options?.freeKill) {
-    forceEquip.push(...$items`The Jokester's Gun, Lil' Doctor™ bag`);
-    bonusEquip.set($item`The Jokester's Gun`, 5000);
+    forceEquip.push(...$items`The Jokester's gun, Lil' Doctor™ bag`);
+    bonusEquip.set($item`The Jokester's gun`, 5000);
   }
-  if (options?.freeRun && haveBootRuns()) {
-    fam = $familiar`Pair of Stomping Boots`;
-    forceEquip.push($item`das boot`);
-    maximize.push("2 familiar weight");
-
-    // only equip latte if we don't need doctor bag
-    if (!options?.freeKill || get("_chestXRayUsed") === 3) {
-      forceEquip.push($item`latte lovers member's mug`);
+  if (options?.freeRun) {
+    if (haveBootRuns()) {
+      fam = $familiar`Pair of Stomping Boots`;
+      maximize.push("2 familiar weight");
+      forceEquip.push($item`das boot`);
+    } else {
+      forceEquip.push(...$items`latte lovers member's mug, Lil' Doctor™ bag`);
     }
-  } else {
-    forceEquip.push(
-      ...$items`mafia thumb ring, lucky gold ring, mr. cheengs spectacles`
-    );
   }
 
   useFamiliar(fam);
@@ -210,7 +194,6 @@ function combat() {
 
 function getTrailMap() {
   let tentIndex = 1;
-  gearUp(["combat"]);
   setChoice(313, tentIndex);
   setChoice(314, tentIndex);
   setChoice(315, tentIndex);
@@ -253,21 +236,19 @@ function getTrailMap() {
 }
 
 function freeBigBrother() {
-  gearUp(["-combat"], { freeRun: true });
-
   while (!get("lastEncounter").includes("Down at the Hatch")) {
+    gearUp(["-combat"], { freeRun: true });
     nonCombat();
     adventure($location`The Wreck of the Edgar Fitzsimmons`, getFreeRuns());
   }
 }
 
 function freeLittleBrother() {
-  gearUp(["meat drop"], {
-    freeRun: true,
-    freeKill: true,
-  });
-
   while (!have($item`wriggling flytrap pellet`)) {
+    gearUp(["meat drop"], {
+      freeRun: true,
+      freeKill: true,
+    });
     ensureLassos(1);
     ensureItem(3, $item`New Age healing crystal`);
     adventure(
@@ -291,35 +272,15 @@ function freeLittleBrother() {
   }
 }
 
-// function getLotsOfFishy(): boolean {
-//   equip($item`old SCUBA tank`);
-//   let pillkeeperAvailable = true;
-
-//   if (
-//     get("_freePillKeeperUsed") &&
-//     spleenLimit() + 3 - get("currentMojoFilters") - mySpleenUse() >= 3
-//   ) {
-//     const neededMojoFilters = Math.min(spleenLimit() - mySpleenUse(), 3);
-//     use($item`mojo filter`, 3);
-//   } else {
-//     pillkeeperAvailable = false;
-//   }
-
-//   if (pillkeeperAvailable) {
-//     cliExecute("pillkeeper semirare");
-//     adventure($location`The Brinier Deepers`, Macro.abort());
-//   }
-//   return pillkeeperAvailable;
-// }
-
 function getSeahorse() {
-  gearUp([], {
-    freeRun: true,
-    forceEquip: $items`mafia pinky ring, latte lovers member's mug`,
-  });
   retrieveItem($item`sea cowbell`, 3);
 
   while (!get("seahorseName")) {
+    gearUp(["item drop"], {
+      freeRun: true,
+      freeKill: true,
+      forceEquip: $items`mafia pinky ring, latte lovers member's mug`,
+    });
     retrieveItem(3, $item`New Age healing crystal`);
     ensureLassos(1);
     adventure(

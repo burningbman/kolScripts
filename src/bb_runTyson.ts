@@ -30,7 +30,6 @@ import {
   eat,
   restoreMp,
   haveEffect,
-  maximize,
   chew,
 } from "kolmafia";
 import {
@@ -45,7 +44,6 @@ import {
   Macro,
   $skill,
   have,
-  adventureMacroAuto,
 } from "libram";
 import {
   ensureEffect,
@@ -139,13 +137,9 @@ const getDrumMacMPA = (): number => {
   const drumMac = getItemPrice($item`drum machine`);
   const palmFrond = getItemPrice($item`palm frond`);
   const waterLily = getItemPrice($item`carbonated water lily`);
-  const clover = Math.min(
-    mallPrice($item`ten-leaf clover`),
-    mallPrice($item`disassembled clover`)
-  );
+
   return Math.floor(
-    ((20 * (meat + drumMac + 130 / 6 + (palmFrond + waterLily) / 3) - clover) /
-      21) *
+    ((5 * (meat + drumMac + 130 / 6 + (palmFrond + waterLily) / 3)) / 6) *
       thumbMultiplier
   );
 };
@@ -205,7 +199,7 @@ const pullDeskBell = (): void => {
 
 const getHallPasses = (): void => {
   if (!have($item`Mer-kin hallpass`)) {
-    buy($item`Mer-kin hallpass`, 10, 6500);
+    buy($item`Mer-kin hallpass`, 10, 8000);
   }
 
   setChoice(401, 2);

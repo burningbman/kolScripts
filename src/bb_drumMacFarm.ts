@@ -58,13 +58,6 @@ function validateIceHouseBanish() {
   return monster && monster[1];
 }
 
-function upkeepUltrahydrated() {
-  if (!haveEffect($effect`Ultrahydrated`)) {
-    use($item`disassembled clover`);
-    adventure($location`The Oasis`, 1);
-  }
-}
-
 function upkeepBuffs() {
   ensureEffect($effect`Fat Leon's Phat Loot Lyric`, 1);
   ensureEffect($effect`Polka of Plenty`, 1);
@@ -132,7 +125,6 @@ export function main(): void {
       abort("Could not get Daily Affirmation: Be a Mind Master");
     }
 
-    upkeepUltrahydrated();
     upkeepBuffs();
     gearUp();
 

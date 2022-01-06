@@ -26,15 +26,11 @@ import {
   takeCloset,
   outfit,
   maximize,
-  myFamiliar,
   availableAmount,
   myBasestat,
   myThrall,
   myClass,
-  restoreMp,
-  myMaxmp,
   getClanName,
-  haveOutfit,
   familiarWeight,
   weightAdjustment,
   stashAmount,
@@ -854,7 +850,7 @@ function prepFrosty() {
   equip($slot`offhand`, $item`party whip`); //item
   equip($item`Great Wolf's beastly trousers`); // item
   equip($item`snowpack`); // item
-  equip($item`BGE 'cuddly critter' shirt`); // item // groovy prism necklace if more damage needed
+  equip($item`BGE 'cuddly critter' shirt`); // item
   equip($slot`acc1`, $item`Pocket Square of Loathing`); // cold res
   equip($slot`acc2`, $item`Mayor Ghost's sash`); //item
   equip($slot`acc3`, $item`Belt of Loathing`); //item

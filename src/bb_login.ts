@@ -22,6 +22,9 @@ function shuffleArray(array: any[]) {
 }
 
 export function main(): void {
+  visitUrl("hermit.php");
+  cliExecute("acquire 3 11-leaf clover");
+
   if (myName().toLowerCase() !== "burningbman") {
     return;
   }

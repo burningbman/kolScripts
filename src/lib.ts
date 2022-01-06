@@ -37,7 +37,6 @@ import {
   myName,
   getCounters,
   haveFamiliar,
-  turnsPlayed,
   runChoice,
   getWorkshed,
   toItem,
@@ -328,7 +327,7 @@ const allKnownSongs = ([] as Effect[]).concat(...songSlots);
 const allSongs = Skill.all()
   .filter(
     (skill) =>
-      toStringAsh((skill.class as unknown) as string) === "Accordion Thief" &&
+      toStringAsh(skill.class as unknown as string) === "Accordion Thief" &&
       skill.buff
   )
   .map((skill) => toEffect(skill));
@@ -401,7 +400,6 @@ export const isDrunk = (): boolean => {
   return myInebriety() > inebrietyLimit();
 };
 
-let _forceFreeKills = true;
 export const getFreeKills = (): Macro => {
   if (
     get("_firedJokestersGun") &&
@@ -413,7 +411,7 @@ export const getFreeKills = (): Macro => {
       throw "No free kills left";
     }
   }
-  return Macro.trySkill($skill`fire the Jokester's gun`)
+  return Macro.trySkill($skill`Fire the Jokester's Gun`)
     .trySkill($skill`Gingerbread Mob Hit`)
     .trySkill($skill`Shattering Punch`)
     .trySkill($skill`Chest X-Ray`);
