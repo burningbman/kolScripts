@@ -1,10 +1,13 @@
 import {
+  abort,
   cliExecute,
   familiarWeight,
   haveEffect,
   itemAmount,
+  mallPrice,
   maximize,
   myAdventures,
+  myDaycount,
   myFamiliar,
   myMaxhp,
   print,
@@ -32,7 +35,14 @@ import {
   maximizeCached,
   Mood,
 } from "libram";
-import { ensureItem, getFreeKills, setChoice, shrug, tryUse } from "./lib";
+import {
+  ensureItem,
+  getFreeKills,
+  haveFreeKills,
+  setChoice,
+  shrug,
+  tryUse,
+} from "./lib";
 
 const MOOD_BASE = new Mood();
 MOOD_BASE.effect($effect`Empathy`);
@@ -59,6 +69,7 @@ function adventure(location: Location, macro: Macro) {
   }
   putCloset($item`sand dollar`, itemAmount($item`sand dollar`));
   restoreHp(myMaxhp());
+  restoreMp(50);
   MOOD_BASE.execute();
   ensureLassos(1);
   adventureMacro(location, macro);
@@ -125,11 +136,13 @@ function ensureLassos(count: number) {
 }
 
 function freeGrandpa() {
-  setChoice(1220, 2);
   setChoice(302, 1);
   setChoice(303, 1);
-  setChoice(304, 2);
-  setChoice(305, 1);
+  setChoice(
+    304,
+    mallPrice($item`bubbling tempura batter`) > get("valueOfAdventure") ? 1 : 2
+  ); // conjure tempura batter
+  setChoice(305, 2); // don't bother with globe of deep sauce
 
   while (!get("lastEncounter").includes("You've Hit Bottom")) {
     gearUp(["-combat"], { freeRun: true });
@@ -210,6 +223,10 @@ function getTrailMap() {
       combat();
     }
 
+    if (!haveFreeKills() && myDaycount() === 1) {
+      abort("No more free kills during first day.");
+    }
+
     adventure(
       $location`The Mer-Kin Outpost`,
       Macro.externalIf(
@@ -279,10 +296,10 @@ function getSeahorse() {
     gearUp(["item drop"], {
       freeRun: true,
       freeKill: true,
-      forceEquip: $items`mafia pinky ring, latte lovers member's mug`,
+      forceEquip: $items`mafia middle finger ring`,
     });
     retrieveItem(3, $item`New Age healing crystal`);
-    ensureLassos(1);
+    retrieveItem($item`sea lasso`, 1);
     adventure(
       $location`The Coral Corral`,
       Macro.if_(

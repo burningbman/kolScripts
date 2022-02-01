@@ -112,6 +112,7 @@ export function main(): void {
       'monstername "blur"',
       Macro.skill($skill`Sing Along`)
         .trySkill($skill`%fn, spit on them!`)
+        .trySkill($skill`Bowl Straight Up`)
         .trySkill($skill`Furious Wallop`)
         .skill($skill`Saucestorm`)
     )

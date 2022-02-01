@@ -400,17 +400,16 @@ export const isDrunk = (): boolean => {
   return myInebriety() > inebrietyLimit();
 };
 
-export const getFreeKills = (): Macro => {
-  if (
+export const haveFreeKills = (): boolean => {
+  return !(
     get("_firedJokestersGun") &&
     get("_chestXRayUsed") === 3 &&
     get("_shatteringPunchUsed") === 3 &&
     get("_gingerbreadMobHitUsed")
-  ) {
-    if (!userConfirm("No free kills left. Continue?")) {
-      throw "No free kills left";
-    }
-  }
+  );
+};
+
+export const getFreeKills = (): Macro => {
   return Macro.trySkill($skill`Fire the Jokester's Gun`)
     .trySkill($skill`Gingerbread Mob Hit`)
     .trySkill($skill`Shattering Punch`)

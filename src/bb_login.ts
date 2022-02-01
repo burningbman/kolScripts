@@ -98,14 +98,8 @@ export function main(): void {
   }
 
   if (!get("breakfastCompleted")) {
-    // prep for mushroom garden fight
-    use($item`Oscus's neverending soda`);
-    cliExecute("ccs garbo");
-    Macro.skill($skill`Saucegeyser`)
-      .repeat()
-      .setAutoAttack();
+    setAutoAttack($skill`Saucegeyser`.name);
     cliExecute("breakfast");
-    setAutoAttack(0);
 
     if (get("kingLiberated")) {
       putShop(

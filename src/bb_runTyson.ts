@@ -31,6 +31,9 @@ import {
   restoreMp,
   haveEffect,
   chew,
+  shopAmount,
+  repriceShop,
+  userConfirm,
 } from "kolmafia";
 import {
   $familiar,
@@ -51,6 +54,8 @@ import {
   sausageFightGuaranteed,
   setChoice,
 } from "./lib";
+
+const GARBO_MPA = 4100;
 
 const runVolcano = (): void => {
   // mallbuy a one-day ticket if needed
@@ -198,87 +203,100 @@ const pullDeskBell = (): void => {
 };
 
 const getHallPasses = (): void => {
-  if (!have($item`Mer-kin hallpass`)) {
-    buy($item`Mer-kin hallpass`, 10, 8000);
+  // only grab more wordquiz if we don't have a day's stock
+  if (shopAmount($item`Mer-kin wordquiz`) < 30) {
+    if (!have($item`Mer-kin hallpass`)) {
+      buy($item`Mer-kin hallpass`, 10, 8000);
+    }
+
+    setChoice(401, 2);
+    setChoice(705, 4);
+    chew($item`sea jelly`);
+    outfit("Mer-kin Gladiatorial Gear");
+    useFamiliar($familiar`none`);
+    equip($item`makeshift SCUBA gear`);
+    retrieveItem($item`Mer-kin bunwig`);
+
+    while (have($effect`Fishy`) && have($item`Mer-kin hallpass`)) {
+      adv1($location`Mer-kin Elementary School`);
+    }
+
+    const price = Math.max(4500, getItemPrice($item`Mer-kin wordquiz`));
+    putShop(
+      price,
+      0,
+      availableAmount($item`Mer-kin wordquiz`),
+      $item`Mer-kin wordquiz`
+    );
+  } else {
+    repriceShop(
+      Math.max(4500, getItemPrice($item`Mer-kin wordquiz`)),
+      $item`Mer-kin wordquiz`
+    );
   }
-
-  setChoice(401, 2);
-  setChoice(705, 4);
-  chew($item`sea jelly`);
-  outfit("Mer-kin Gladiatorial Gear");
-  useFamiliar($familiar`none`);
-  equip($item`makeshift SCUBA gear`);
-  retrieveItem($item`Mer-kin bunwig`);
-
-  while (have($effect`Fishy`) && have($item`Mer-kin hallpass`)) {
-    adv1($location`Mer-kin Elementary School`);
-  }
-
-  const price = Math.max(4500, getItemPrice($item`Mer-kin wordquiz`));
-  putShop(
-    price,
-    0,
-    availableAmount($item`Mer-kin wordquiz`),
-    $item`Mer-kin wordquiz`
-  );
 };
 
 export function main(args: string): void {
   setChoice(1455, 5);
   args = args || "";
   set("logPreferenceChange", false);
-  let doVolcano = false;
   const drumMacMPA = getDrumMacMPA();
-
-  if (
-    !args.includes("noCheck") &&
-    drumMacMPA > 1.5 * mallPrice($item`drum machine`)
-  )
-    throw "Check mall prices";
-
-  if (drumMacMPA < 3450) {
-    print("Going volcano mining", "red");
-    set("valueOfAdventure", 3450);
-    doVolcano = true;
-  } else {
-    set("valueOfAdventure", drumMacMPA);
-    print(`Farming drum machines with ${drumMacMPA} MPA`, "green");
-  }
+  print(`${drumMacMPA}`, "blue");
 
   pullDeskBell();
 
-  // generate all our turns
-  if (myFullness() < fullnessLimit()) {
-    useFamiliar($familiar`none`);
-    cliExecute("CONSUME ALL");
-  }
+  if (
+    args.includes("garbo") ||
+    drumMacMPA < GARBO_MPA ||
+    shopAmount($item`drum machine`) > 2000
+  ) {
+    if (get("_questPartyFair") !== "finished") {
+      if (userConfirm("Haven't done NEP. Stop?")) {
+        print("Do PireateRealm and NEP", "red");
+        return;
+      }
+    }
+    print("Running garbo", "red");
+    set("valueOfAdventure", GARBO_MPA);
+    cliExecute("acquire carpe");
+    cliExecute("garbo");
+    use(
+      availableAmount($item`bag of park garbage`),
+      $item`bag of park garbage`
+    );
+  } else {
+    set("valueOfAdventure", drumMacMPA);
+    print(`Farming drum machines with ${drumMacMPA} MPA`, "green");
 
-  if (sausageFightGuaranteed()) {
-    equip($item`Kramco Sausage-o-Matic™`);
-    equip($item`backup camera`);
-
-    Macro.if_(
-      '!monstername "sausage goblin"',
-      Macro.skill($skill`Back-Up to your Last Enemy`)
-    )
-      .skill($skill`Sing Along`)
-      .skill($skill`Furious Wallop`)
-      .skill($skill`Awesome Balls of Fire`)
-      .repeat()
-      .setAutoAttack();
-
-    while (get("_backUpUses") < 11) {
-      restoreMp(400);
-      adv1($location`Noob Cave`);
+    // generate all our turns
+    if (myFullness() < fullnessLimit()) {
+      useFamiliar($familiar`none`);
+      cliExecute("CONSUME ALL");
     }
 
-    eat($item`magical sausage`, 23 - get("_sausagesEaten"));
-  }
+    if (sausageFightGuaranteed()) {
+      equip($item`Kramco Sausage-o-Matic™`);
+      equip($item`backup camera`);
 
-  if (myFullness() === fullnessLimit()) {
-    if (doVolcano) {
-      runVolcano();
-    } else {
+      Macro.if_(
+        '!monstername "sausage goblin"',
+        Macro.skill($skill`Back-Up to your Last Enemy`)
+      )
+        .skill($skill`Sing Along`)
+        .skill($skill`Furious Wallop`)
+        .skill($skill`Awesome Balls of Fire`)
+        .repeat()
+        .setAutoAttack();
+
+      while (get("_backUpUses") < 11) {
+        restoreMp(400);
+        adv1($location`Noob Cave`);
+      }
+
+      eat($item`magical sausage`, 23 - get("_sausagesEaten"));
+    }
+
+    if (myFullness() === fullnessLimit()) {
       outfit("drum mac farm");
 
       if (haveEffect($effect`Merry Smithsness`) < myAdventures()) {
@@ -288,19 +306,21 @@ export function main(args: string): void {
       }
 
       cliExecute("bb_drumMacFarm");
-
-      for (const item of [
-        $item`drum machine`,
-        $item`carbonated water lily`,
-        $item`palm frond`,
-        toItem(`Homebodyl™`), //$item`Homebodyl™`,
-      ]) {
-        putShop(getItemPrice(item), 0, availableAmount(item), item);
-      }
       autosell(availableAmount($item`hot date`), $item`hot date`);
-      use(0, $item`Gathered Meat-Clip`);
     }
   }
+
+  for (const item of [
+    $item`drum machine`,
+    $item`carbonated water lily`,
+    $item`palm frond`,
+    $item`Extrovermectin™`,
+    $item`Homebodyl™`,
+    $item`11-leaf clover`,
+  ]) {
+    putShop(getItemPrice(item), 0, availableAmount(item), item);
+  }
+  use(availableAmount($item`Gathered Meat-Clip`), $item`Gathered Meat-Clip`);
 
   // nightcap if everything was successful
   if (myAdventures() === 0 && myInebriety() <= inebrietyLimit()) {

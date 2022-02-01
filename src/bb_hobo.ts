@@ -17,16 +17,13 @@ import {
   cliExecute,
   myMaxhp,
   userConfirm,
-  putCloset,
   equippedItem,
-  itemAmount,
   haveEffect,
   useSkill,
   adv1,
   takeCloset,
   outfit,
   maximize,
-  availableAmount,
   myBasestat,
   myThrall,
   myClass,
@@ -45,7 +42,6 @@ import {
   sausageFightGuaranteed,
   lastAdventureText,
   setClan,
-  inSemirareWindow,
   setChoice,
   getEffect,
   myFamiliarWeight,
@@ -77,12 +73,6 @@ const MACRO_KILL = Macro.externalIf(isDrunk(), Macro.attack().repeat())
   // .skill($skill`Entangling Noodles`)
   .skill($skill`Saucegeyser`)
   .repeat();
-const SR_LOCATIONS = [
-  $location`Burnbarrel Blvd.`,
-  $location`Exposure Esplanade`,
-  $location`The Ancient Hobo Burial Ground`,
-  $location`The Purple Light District`,
-];
 
 const TRASH_PROP = "_bb_hobo.TrashCount";
 const DANCE_PROP = "_bb_hobo.DanceCount";
@@ -428,14 +418,6 @@ function runSewer() {
   print("Through the sewers.", "green");
 }
 
-const handleNickels = (location: Location) => {
-  // closet nickels if not in SR window or not in good SR drop location
-  if (!inSemirareWindow() || !SR_LOCATIONS.includes(location))
-    putCloset(itemAmount($item`hobo nickel`), $item`hobo nickel`);
-  else if (availableAmount($item`hobo nickel`) < 5)
-    takeCloset(5 - availableAmount($item`hobo nickel`), $item`hobo nickel`);
-};
-
 function sideZoneLoop(
   location: Location,
   sneaky: boolean,
@@ -471,8 +453,6 @@ function sideZoneLoop(
 
     adv1(location, -1, "");
 
-    // handle nickels before callback so TS can uncloset 20 nickels if needed
-    handleNickels(location);
     let tempMacro;
     ({ done, macro: tempMacro } = callback());
 
