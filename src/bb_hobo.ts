@@ -34,6 +34,7 @@ import {
   takeStash,
   putStash,
   use,
+  Location,
 } from "kolmafia";
 
 import {

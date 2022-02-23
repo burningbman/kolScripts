@@ -1,12 +1,17 @@
 import {
   abort,
   cliExecute,
+  dadSeaMonkeeWeakness,
+  eat,
   familiarWeight,
   haveEffect,
+  Item,
   itemAmount,
+  Location,
   mallPrice,
   maximize,
   myAdventures,
+  myBasestat,
   myDaycount,
   myFamiliar,
   myMaxhp,
@@ -15,18 +20,23 @@ import {
   restoreHp,
   restoreMp,
   retrieveItem,
+  runChoice,
+  setAutoAttack,
   use,
   useFamiliar,
+  useSkill,
   visitUrl,
   weightAdjustment,
 } from "kolmafia";
 import {
   $effect,
+  $element,
   $familiar,
   $item,
   $items,
   $location,
   $skill,
+  $stat,
   $stats,
   adventureMacro,
   get,
@@ -59,6 +69,16 @@ MOOD_NON_COMBAT.effect($effect`The Sonata of Sneakiness`);
 const MOOD_COMBAT = new Mood();
 MOOD_COMBAT.effect($effect`Musk of the Moose`);
 MOOD_COMBAT.effect($effect`Carlweather's Cantata of Confrontation`);
+
+const DAD_COMBAT = new Map();
+DAD_COMBAT.set($element`hot`, $skill`Awesome Balls of Fire`);
+DAD_COMBAT.set($element`cold`, $skill`Snowclone`);
+DAD_COMBAT.set($element`stench`, $skill`Eggsplosion`);
+DAD_COMBAT.set($element`sleaze`, $skill`Grease Lightning`);
+DAD_COMBAT.set($element`spooky`, $skill`Raise Backup Dancer`);
+DAD_COMBAT.set($element`none`, $skill`Shrap`);
+
+
 
 function adventure(location: Location, macro: Macro) {
   if (!haveEffect($effect`Fishy`)) {
@@ -389,23 +409,51 @@ export function main(): void {
   }
 
   if (get("seahorseName")) {
-    if (!$stats`Mysticality,Moxie,Muscle`.find((stat) => stat < 150)) {
-      maximize(
-        `hp, mp, +outfit Clothing of Loathing, +equip old SCUBA tank, +equip ${getFamEquip()}`,
-        false
-      );
-      restoreHp(myMaxhp());
-      restoreMp(1200);
-      retrieveItem($item`warbear whosit`, 12);
-      print("ready for dad", "green");
-      // visitUrl("sea_merkin.php?action=temple");
-      // runChoice(1);
-      // runChoice(1);
-      // runChoice(1);
-      // // TODO fight
-      // runChoice(1);
+    retrieveItem($item`warbear whosit`, 12);
+    if (myBasestat($stat`Moxie`) < 150 || myBasestat($stat`Muscle`) < 150) {
+      setChoice(1322, 1); // start the party quest
+      const moxLower = myBasestat($stat`Moxie`) < myBasestat($stat`Muscle`);
+      useFamiliar($familiar`Hovering Sombrero`);
+      maximizeCached([`${moxLower ? 150 : 100} moxie experience percent`,
+      `${moxLower ? 100 : 150} muscle experience percent`, 'myst'], {
+        forceEquip: $items`makeshift garbage shirt`
+      });
+      useSkill($skill`Get Big`);
+      useSkill($skill`Song of Bravado`);
+      useSkill($skill`Stevedave's Shanty of Superiority`);
+      useSkill($skill`Visit your Favorite Bird`);
+      eat($item`magical sausage`);
+
+      while ((myBasestat($stat`Moxie`) < 150 || myBasestat($stat`Muscle`) < 150) && get('_neverendingPartyFreeTurns') < 10) {
+        adventureMacro($location`The Neverending Party`, Macro.trySkill($skill`Feel Pride`).skill($skill`Saucegeyser`).repeat());
+      }
     }
+    useFamiliar($familiar`Red-Nosed Snapper`);
+    maximize(
+      `hp, mp, +outfit Clothing of Loathing, +equip old SCUBA tank, +equip ${getFamEquip()}`,
+      false
+    );
+    restoreHp(myMaxhp());
+    eat($item`magical sausage`);
+    restoreMp(1200);
+    setAutoAttack(0);
+    visitUrl("sea_merkin.php?action=temple");
+    runChoice(1);
+    runChoice(1);
+    runChoice(1);
+
+
+    let page;
+    let round = 1;
+    do {
+      const skill = DAD_COMBAT.get(dadSeaMonkeeWeakness(round));
+      page = visitUrl(`fight.php?action=skill&whichskill=1${skill.id}`);
+      round++;
+    } while (page.includes(`You're fighting Dad Sea Monkee`));
   }
 
   print(`Used a total of ${adventuresUsed} adventures.`, "green");
 }
+
+// meat drop, 10 item drop, 240 max, adventure underwater, equip das boot, -equip broken champagne
+// meat drop, 10 item drop, 234 max, -item drop penalty, adventure underwater, equip das boot, -equip broken champagne

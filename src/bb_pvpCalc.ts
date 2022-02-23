@@ -4,7 +4,8 @@ import {
     toSlot,
     mallPrice,
     autosellPrice,
-    print
+    print,
+    Item
 } from 'kolmafia';
 
 const MAX_COUNT = 10;
@@ -292,7 +293,7 @@ const PANTS = ['Drunkula\'s silky pants',
     'spandex anniversary shorts',
     'conspicuous lack of pants',
     'Guild Pants',
-]
+];
 
 const SHIRTS = ['Unkillable Skeleton\'s breastplate',
     'cool iron breastplate',
@@ -405,7 +406,7 @@ const SHIRTS = ['Unkillable Skeleton\'s breastplate',
     'Kiss the Knob apron',
     'Professor What T-Shirt',
     'Thinknerd T-Shirt',
-    'Radio Free Jersey']
+    'Radio Free Jersey'];
 
 const BACK_ITEMS = ['anniversary pewter cape',
     'antique nutcracker cape',
@@ -480,7 +481,7 @@ const BACK_ITEMS = ['anniversary pewter cape',
     'whatsit-covered turtle shell',
     'wicker slicker',
     'wings of fire',
-    'yellow cape']
+    'yellow cape'];
 
 const ACCESSORY = ['BOOtonniere',
     'Chester\'s Aquarius medallion',
@@ -3132,13 +3133,13 @@ function sortPrice(a: priceData, b: priceData) {
 }
 
 function getPriceData(items: string[]) {
-    let slotPriceData: priceData[] = [];
+    const slotPriceData: priceData[] = [];
 
     items.forEach((itemString) => {
-        let item = toItem(itemString);
+        const item = toItem(itemString);
         if ( /*canEquip(item) && */item.tradeable && item.discardable && !item.quest && !item.gift && autosellPrice(item) > 0) {
-            let slot = toSlot(item);
-            let price = mallPrice(item);
+            const slot = toSlot(item);
+            const price = mallPrice(item);
             print(`Found an equippable ${item} for ${slot} at ${price}!`);
 
             if (slotPriceData.length < MAX_COUNT) {
@@ -3162,7 +3163,7 @@ function getPriceData(items: string[]) {
 }
 
 export function main() {
-    let priceData = new Map<string, priceData[]>();
+    const priceData = new Map<string, priceData[]>();
 
     priceData.set('pants', getPriceData(PANTS));
     priceData.set('back', getPriceData(BACK_ITEMS));
@@ -3178,7 +3179,7 @@ export function main() {
             print(`${slot}:`);
             slotPriceData.forEach((priceData) => {
                 print(`${priceData.item.name} ${priceData.price}`);
-            })
+            });
             print();
         }
     });

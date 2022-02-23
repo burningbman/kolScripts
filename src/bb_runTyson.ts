@@ -34,6 +34,7 @@ import {
   shopAmount,
   repriceShop,
   userConfirm,
+  Item,
 } from "kolmafia";
 import {
   $familiar,
@@ -56,6 +57,7 @@ import {
 } from "./lib";
 
 const GARBO_MPA = 4100;
+const MAX_DRUM_MACS = 200;
 
 const runVolcano = (): void => {
   // mallbuy a one-day ticket if needed
@@ -79,7 +81,7 @@ const runVolcano = (): void => {
     for (let i = 1; i <= 3; i++) {
       const item = toItem(get("_volcanoItem" + i));
       const itemCost = mallPrice(item);
-      const itemCount = get<number>("_volcanoItemCount" + i);
+      const itemCount = parseInt(get(`_volcanoItemCount${i}`));
       const cost = itemCount * itemCost;
       print(`Option ${i}: ${itemCount} ${item.name} @ ${itemCost} ea`);
       if (cost !== 0 && cost < cheapestCost) {
@@ -89,7 +91,7 @@ const runVolcano = (): void => {
     }
     if (cheapestOption !== -1) {
       buy(
-        get<number>("_volcanoItemCount" + cheapestOption),
+        parseInt(get("_volcanoItemCount" + cheapestOption)),
         toItem(get("_volcanoItem" + cheapestOption))
       );
       visitUrl("place.php?whichplace=airport_hot&action=airport4_questhub");
@@ -145,7 +147,7 @@ const getDrumMacMPA = (): number => {
 
   return Math.floor(
     ((5 * (meat + drumMac + 130 / 6 + (palmFrond + waterLily) / 3)) / 6) *
-      thumbMultiplier
+    thumbMultiplier
   );
 };
 
@@ -165,7 +167,7 @@ const getDistensionAndDogHairPills = (): void => {
     runCombat();
   }
 
-  setChoice(536, get<boolean>("_bb_runTyson_moreDistention", false) ? 1 : 2);
+  setChoice(536, get("_bb_runTyson_moreDistention", false) ? 1 : 2);
   use(3, $item`Map to Safety Shelter Grimace Prime`);
   setChoice(536, get("_bb_runTyson_moreDistention") ? 2 : 1);
   use(2, $item`Map to Safety Shelter Grimace Prime`);
@@ -174,7 +176,7 @@ const getDistensionAndDogHairPills = (): void => {
 
 const pullDeskBell = (): void => {
   // cargo shorts
-  if (!get<boolean>("_cargoPocketEmptied")) {
+  if (!get("_cargoPocketEmptied")) {
     getHallPasses();
     getDistensionAndDogHairPills();
     cliExecute("mom stats");
@@ -248,14 +250,8 @@ export function main(args: string): void {
   if (
     args.includes("garbo") ||
     drumMacMPA < GARBO_MPA ||
-    shopAmount($item`drum machine`) > 2000
+    shopAmount($item`drum machine`) > MAX_DRUM_MACS
   ) {
-    if (get("_questPartyFair") !== "finished") {
-      if (userConfirm("Haven't done NEP. Stop?")) {
-        print("Do PireateRealm and NEP", "red");
-        return;
-      }
-    }
     print("Running garbo", "red");
     set("valueOfAdventure", GARBO_MPA);
     cliExecute("acquire carpe");
@@ -318,7 +314,11 @@ export function main(args: string): void {
     $item`Homebodyl™`,
     $item`11-leaf clover`,
   ]) {
-    putShop(getItemPrice(item), 0, availableAmount(item), item);
+    if (availableAmount(item) > 0) {
+      putShop(getItemPrice(item), 0, availableAmount(item), item);
+    } else {
+      repriceShop(getItemPrice(item), item);
+    }
   }
   use(availableAmount($item`Gathered Meat-Clip`), $item`Gathered Meat-Clip`);
 

@@ -42,7 +42,11 @@ import {
   toItem,
   myInebriety,
   inebrietyLimit,
-  userConfirm,
+  Item,
+  Location,
+  Effect,
+  Monster,
+  Skill,
 } from "kolmafia";
 import {
   $effect,
@@ -388,8 +392,8 @@ export const inSemirareWindow = (): boolean => {
 export const grabColdMedicine = (): void => {
   if (
     getWorkshed() === toItem("cold medicine cabinet") && //$item`cold medicine cabinet` &&
-    get<number>("_coldMedicineConsults") < 5 &&
-    get<number>("_nextColdMedicineConsult") < totalTurnsPlayed()
+    get("_coldMedicineConsults") < 5 &&
+    get("_nextColdMedicineConsult") < totalTurnsPlayed()
   ) {
     visitUrl("campground.php?action=workshed");
     runChoice(5);

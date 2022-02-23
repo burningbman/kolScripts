@@ -32,6 +32,7 @@ import {
   $slot,
   set,
   have,
+  maximizeCached,
 } from "libram";
 import {
   ensureEffect,
@@ -48,6 +49,14 @@ function gearUp(): boolean {
 
   useFamiliar($familiar`Jumpsuited Hound Dog`);
   equip($slot`familiar`, $item`amulet coin`);
+  // let bonusEquip = new Map<Item, number>();
+  // bonusEquip.set($item`lucky gold ring`, 500);
+  // bonusEquip.set($item`Mr. Cheeng's spectacles`, 400);
+  // bonusEquip.set($item`mafia pointer finger ring`, 400);
+  // maximizeCached(['item drop 135 min'], {
+  //   bonusEquip,
+    
+  // })
   return outfit("drum mac farm");
 }
 
@@ -59,7 +68,6 @@ function validateIceHouseBanish() {
 }
 
 function upkeepBuffs() {
-  ensureEffect($effect`Fat Leon's Phat Loot Lyric`, 1);
   ensureEffect($effect`Polka of Plenty`, 1);
   ensureEffect($effect`Singer's Faithful Ocelot`, 1);
 }

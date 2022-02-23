@@ -17,6 +17,7 @@ import {
   equip,
   mallPrice,
   autosellPrice,
+  printHtml,
 } from "kolmafia";
 
 import {
@@ -94,7 +95,6 @@ function setup(): string {
   setChoice(1352, 1); // first lsland
   setChoice(1353, 5); // second island
   setChoice(1355, 1); // Land Ho!
-  setChoice(1357, 3); // High Tide, Low Morale
   setChoice(1358, 1); // The Starboard is Bare
   setChoice(1359, 1); // Grog for the Grogless
 
@@ -141,11 +141,11 @@ function goShopping(loot: { [key: string]: number }): void {
   print(`Before shopping ${JSON.stringify(loot, undefined, 2)}`, "blue");
   let done = false;
   while (loot.Gold >= 10 && !done) {
-    if (loot.Grub < 20) {
+    if (loot.Grub < 15) {
       runChoice(1);
-    } else if (loot.Grog < 20) {
+    } else if (loot.Grog < 15) {
       runChoice(2);
-    } else if (loot.Glue < 4) {
+    } else if (loot.Glue < 3) {
       runChoice(3);
     } else if (loot.Gold > 230) {
       runChoice(4);
@@ -169,7 +169,8 @@ function runSailingTurn(mate: string): void {
 
   setChoice(1362, haveGlue ? 2 : 1); // Stormy Weather
   setChoice(1364, haveGlue ? 1 : 2); // An Opportunity for Dastardly Do
-  setChoice(1367, haveGlue ? 1 : 2); // The Ship is Wrecked
+  setChoice(1367, haveGlue ? 1 : 2); // The Ship is Wrecked  
+  setChoice(1357, LOOT.Gold > 30 ? 3 : 1); // High Tide, Low Morale
 
   // Smooth Sailing
   if (mate.includes("Cuisiner") && LOOT.Grub) {
@@ -223,7 +224,7 @@ export function main(): void {
     }
   }
 
-  let output = "";
+  let output = "<table><tr><td>#</td><td>Item</td><td>Value</td></tr>";
   if (get("lastEncounter") === "Your Empire of Dirt") {
     const trash_results = runChoice(1);
     let curTrash;
@@ -231,13 +232,13 @@ export function main(): void {
       curTrash = TRASH_REG_EXP.exec(trash_results);
       if (curTrash) {
         const item = $item`${curTrash[1]}`;
-        output += `Got ${curTrash[2]} ${curTrash[1]}. Mall: ${mallPrice(
-          item
-        )} Autosell: ${autosellPrice(item)}\n`;
+        const value = mallPrice(item) === 2 * autosellPrice(item) ? autosellPrice(item) : mallPrice(item);
+        const itemTotal = value * parseInt(curTrash[2]);
+        output += `<tr><td>${curTrash[2]}</td><td>${curTrash[1]}</td><td>${itemTotal}</td></tr>`;
       }
     } while (curTrash);
   }
 
-  print(output, "green");
   print("PirateRealm complete", "green");
+  printHtml(`${output}</table>`);
 }
