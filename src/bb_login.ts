@@ -1,4 +1,4 @@
-import { get, $item, have, Macro, $skill } from "libram";
+import { get, $item, have, $skill } from "libram";
 import {
   use,
   visitUrl,
@@ -12,7 +12,7 @@ import {
   availableAmount,
   useSkill,
 } from "kolmafia";
-import { setClan } from "./lib";
+import { getItemPrice, setClan } from "./lib";
 
 function shuffleArray(array: any[]) {
   for (let i = array.length - 1; i > 0; i--) {
@@ -102,7 +102,7 @@ export function main(): void {
 
     if (get("kingLiberated")) {
       putShop(
-        8999,
+        Math.max(9350, getItemPrice($item`battery (AAA)`)),
         0,
         availableAmount($item`battery (AAA)`),
         $item`battery (AAA)`

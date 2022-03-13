@@ -18,6 +18,8 @@ import {
   mallPrice,
   autosellPrice,
   printHtml,
+  userConfirm,
+  outfit,
 } from "kolmafia";
 
 import {

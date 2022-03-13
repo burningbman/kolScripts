@@ -22,7 +22,6 @@ import {
   putShop,
   autosell,
   numericModifier,
-  shopPrice,
   runCombat,
   retrieveItem,
   equip,
@@ -33,8 +32,6 @@ import {
   chew,
   shopAmount,
   repriceShop,
-  userConfirm,
-  Item,
 } from "kolmafia";
 import {
   $familiar,
@@ -54,9 +51,10 @@ import {
   mapMonster,
   sausageFightGuaranteed,
   setChoice,
+  getItemPrice,
 } from "./lib";
 
-const GARBO_MPA = 4100;
+const GARBO_MPA = 4700;
 const MAX_DRUM_MACS = 200;
 
 const runVolcano = (): void => {
@@ -122,17 +120,6 @@ const runVolcano = (): void => {
   }
 };
 
-const getItemPrice = (item: Item): number => {
-  const shop = shopPrice(item);
-  const mall = mallPrice(item);
-
-  if (shop === 999999999 || mall <= shop) {
-    return mall - 1;
-  }
-
-  return shop;
-};
-
 const getDrumMacMPA = (): number => {
   outfit("drum mac farm");
   const cheeng = 180;
@@ -147,7 +134,7 @@ const getDrumMacMPA = (): number => {
 
   return Math.floor(
     ((5 * (meat + drumMac + 130 / 6 + (palmFrond + waterLily) / 3)) / 6) *
-    thumbMultiplier
+      thumbMultiplier
   );
 };
 

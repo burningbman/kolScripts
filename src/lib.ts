@@ -47,6 +47,8 @@ import {
   Effect,
   Monster,
   Skill,
+  shopPrice,
+  mallPrice,
 } from "kolmafia";
 import {
   $effect,
@@ -418,4 +420,17 @@ export const getFreeKills = (): Macro => {
     .trySkill($skill`Gingerbread Mob Hit`)
     .trySkill($skill`Shattering Punch`)
     .trySkill($skill`Chest X-Ray`);
+};
+
+
+
+export const getItemPrice = (item: Item): number => {
+  const shop = shopPrice(item);
+  const mall = mallPrice(item);
+
+  if (shop === 999999999 || mall <= shop) {
+    return mall - 1;
+  }
+
+  return shop;
 };
