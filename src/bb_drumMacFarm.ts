@@ -4,9 +4,7 @@ import {
   abort,
   visitUrl,
   retrieveItem,
-  haveEffect,
   use,
-  adventure,
   itemDropModifier,
   myAdventures,
   isBanished,
@@ -17,8 +15,6 @@ import {
   myName,
   cliExecute,
   buy,
-  turnsPlayed,
-  print,
 } from "kolmafia";
 import {
   $familiar,
@@ -32,7 +28,6 @@ import {
   $slot,
   set,
   have,
-  maximizeCached,
 } from "libram";
 import {
   ensureEffect,
@@ -55,7 +50,7 @@ function gearUp(): boolean {
   // bonusEquip.set($item`mafia pointer finger ring`, 400);
   // maximizeCached(['item drop 135 min'], {
   //   bonusEquip,
-    
+
   // })
   return outfit("drum mac farm");
 }

@@ -422,8 +422,6 @@ export const getFreeKills = (): Macro => {
     .trySkill($skill`Chest X-Ray`);
 };
 
-
-
 export const getItemPrice = (item: Item): number => {
   const shop = shopPrice(item);
   const mall = mallPrice(item);

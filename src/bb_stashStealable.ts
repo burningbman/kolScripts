@@ -1,21 +1,27 @@
 import {
-    batchOpen,
-    batchClose,
-    getInventory,
-    putCloset,
-    toItem,
-    autosellPrice
-} from 'kolmafia';
+  batchOpen,
+  batchClose,
+  getInventory,
+  putCloset,
+  toItem,
+  autosellPrice,
+} from "kolmafia";
 
-export function main() {
-    let invItems = getInventory();
+export function main(): void {
+  const invItems = getInventory();
 
-    batchOpen();
-    for (let itemName in invItems) {
-        let item = toItem(itemName);
-        if (item.tradeable && item.discardable && !item.quest && !item.gift && autosellPrice(item) > 0) {
-            putCloset(item, invItems[itemName]);
-        }
+  batchOpen();
+  for (const itemName in invItems) {
+    const item = toItem(itemName);
+    if (
+      item.tradeable &&
+      item.discardable &&
+      !item.quest &&
+      !item.gift &&
+      autosellPrice(item) > 0
+    ) {
+      putCloset(item, invItems[itemName]);
     }
-    batchClose();
+  }
+  batchClose();
 }
