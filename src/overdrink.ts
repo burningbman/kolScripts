@@ -69,5 +69,7 @@ export function main(): void {
   if (myDaycount() !== 1) {
     cliExecute("garbo ascend");
     cliExecute("hccs_pre");
+  } else {
+    cliExecute("bb_logout");
   }
 }

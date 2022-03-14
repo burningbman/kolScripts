@@ -247,6 +247,7 @@ function getTrailMap() {
 
   tryUse(1, $item`Mer-kin stashbox`);
   tryUse(1, $item`Mer-kin trailmap`);
+  visitUrl("monkeycastle.php?action=grandpastory&topic=currents");
 }
 
 function freeBigBrother() {
