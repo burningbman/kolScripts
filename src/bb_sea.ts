@@ -35,6 +35,7 @@ import {
   $item,
   $items,
   $location,
+  $phylum,
   $skill,
   $stat,
   adventureMacro,
@@ -43,6 +44,7 @@ import {
   Macro,
   maximizeCached,
   Mood,
+  Snapper,
 } from "libram";
 import {
   ensureItem,
@@ -206,11 +208,6 @@ function combat() {
 }
 
 function getTrailMap() {
-  let tentIndex = 1;
-  setChoice(313, tentIndex);
-  setChoice(314, tentIndex);
-  setChoice(315, tentIndex);
-
   ensureLassos(1);
   retrieveItem(3, $item`New Age healing crystal`);
 
@@ -239,7 +236,7 @@ function getTrailMap() {
   );
 
   if (get("lastEncounter").includes("Intent")) {
-    tentIndex++;
+    const tentIndex = parseInt(get("choiceAdventure313")) + 1;
     setChoice(313, tentIndex);
     setChoice(314, tentIndex);
     setChoice(315, tentIndex);
@@ -325,6 +322,11 @@ function setup() {
 
   setChoice(299, 1); // free Big
 
+  // tent searching
+  setChoice(313, 1);
+  setChoice(314, 1);
+  setChoice(315, 1);
+
   if (!haveEffect($effect`Fishy`)) {
     use($item`fishy pipe`);
     if (!haveEffect($effect`Fishy`)) throw "Did not get fishy from pipe.";
@@ -384,6 +386,8 @@ function fightDad() {
   runChoice(1);
   runChoice(1);
 
+  cliExecute("ccs dad_monkee");
+
   try {
     runChoice(1);
   } catch (e) {
@@ -394,17 +398,31 @@ function fightDad() {
   let round = 1;
   do {
     const skill = DAD_COMBAT.get(dadSeaMonkeeWeakness(round));
-    page = visitUrl(`fight.php?action=skill&whichskill=1${skill.id}`);
+    page = visitUrl(`fight.php?action=skill&whichskill=${skill.id}`);
     round++;
   } while (page.includes(`You're fighting Dad Sea Monkee`));
 }
 
+const setSnapperTracking = (questStatus: string) => {
+  const phylum =
+    "unstarted" === questStatus ? $phylum`Plant` : $phylum`Mer-kin`;
+
+  if (Snapper.getTrackedPhylum() !== phylum) {
+    Snapper.trackPhylum(phylum);
+  }
+
+  return;
+};
+
 export function main(): void {
   let stopMsg;
+  const advMap: { [key: string]: number } = {};
   setup();
 
   while (!stopMsg) {
+    const startAdventures = myAdventures();
     const status = get("questS02Monkees");
+    setSnapperTracking(status);
     switch (status) {
       case "unstarted":
         stopMsg = freeLittleBrother();
@@ -423,6 +441,7 @@ export function main(): void {
         stopMsg = freeGrandpa();
         break;
       case "step6":
+      case "step7":
         if (!get("corralUnlocked")) {
           stopMsg = getTrailMap();
         } else if (!get("seahorseName")) {
@@ -432,6 +451,9 @@ export function main(): void {
         }
         break;
     }
+
+    advMap[status] = advMap[status] || 0;
+    advMap[status] += startAdventures - myAdventures();
 
     if (!haveFreeRuns()) {
       stopMsg = "No more free runs.";
@@ -445,6 +467,7 @@ export function main(): void {
   }
 
   stopMsg && print(stopMsg, "red");
+  print(JSON.stringify(advMap, undefined, 2), "blue");
 }
 
 // meat drop, 10 item drop, 240 max, adventure underwater, equip das boot, -equip broken champagne

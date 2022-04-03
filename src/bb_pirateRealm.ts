@@ -171,7 +171,7 @@ function runSailingTurn(mate: string): void {
 
   setChoice(1362, haveGlue ? 2 : 1); // Stormy Weather
   setChoice(1364, haveGlue ? 1 : 2); // An Opportunity for Dastardly Do
-  setChoice(1367, haveGlue ? 1 : 2); // The Ship is Wrecked  
+  setChoice(1367, haveGlue ? 1 : 2); // The Ship is Wrecked
   setChoice(1357, LOOT.Gold > 30 ? 3 : 1); // High Tide, Low Morale
 
   // Smooth Sailing
@@ -205,13 +205,13 @@ function runIslandTurn(): boolean {
   return get("lastEncounter") === "Your Empire of Dirt";
 }
 
-export function main(): void {
+export default (): string => {
   if (myInebriety() <= inebrietyLimit()) {
-    print("Not overdrunk for PirateRealm", "red");
-    return;
+    throw "Not overdrunk for PirateRealm";
   }
 
   const mate = setup();
+  let output = "";
   let done = false;
 
   while (!done) {
@@ -226,15 +226,18 @@ export function main(): void {
     }
   }
 
-  let output = "<table><tr><td>#</td><td>Item</td><td>Value</td></tr>";
   if (get("lastEncounter") === "Your Empire of Dirt") {
     const trash_results = runChoice(1);
     let curTrash;
+    output = "<table><tr><td>#</td><td>Item</td><td>Value</td></tr>";
     do {
       curTrash = TRASH_REG_EXP.exec(trash_results);
       if (curTrash) {
         const item = $item`${curTrash[1]}`;
-        const value = mallPrice(item) === 2 * autosellPrice(item) ? autosellPrice(item) : mallPrice(item);
+        const value =
+          mallPrice(item) === 2 * autosellPrice(item)
+            ? autosellPrice(item)
+            : mallPrice(item);
         const itemTotal = value * parseInt(curTrash[2]);
         output += `<tr><td>${curTrash[2]}</td><td>${curTrash[1]}</td><td>${itemTotal}</td></tr>`;
       }
@@ -242,5 +245,5 @@ export function main(): void {
   }
 
   print("PirateRealm complete", "green");
-  printHtml(`${output}</table>`);
-}
+  return `${output}</table>`;
+};

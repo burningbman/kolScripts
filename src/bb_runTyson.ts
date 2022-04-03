@@ -230,13 +230,18 @@ export function main(args: string): void {
   args = args || "";
   set("logPreferenceChange", false);
   const drumMacMPA = getDrumMacMPA();
-  print(`${drumMacMPA}`, "blue");
+  print(
+    `Drum Machine Mall: ${mallPrice(
+      $item`drum machine`
+    )} Estimated MPA: ${drumMacMPA}`,
+    "blue"
+  );
 
   pullDeskBell();
 
   if (
     args.includes("garbo") ||
-    drumMacMPA < GARBO_MPA ||
+    mallPrice($item`drum machine`) < GARBO_MPA ||
     shopAmount($item`drum machine`) > MAX_DRUM_MACS
   ) {
     print("Running garbo", "red");

@@ -11,6 +11,7 @@ import {
   putShop,
   availableAmount,
   useSkill,
+  Item,
 } from "kolmafia";
 import { getItemPrice, setClan } from "./lib";
 
@@ -19,6 +20,11 @@ function shuffleArray(array: any[]) {
     const j = Math.floor(Math.random() * (i + 1));
     [array[i], array[j]] = [array[j], array[i]];
   }
+}
+
+function shopIt(item: Item, min: number) {
+  const price = Math.max(min, getItemPrice(item));
+  putShop(price, 0, availableAmount(item), item);
 }
 
 export function main(): void {
@@ -101,18 +107,13 @@ export function main(): void {
     cliExecute("breakfast");
 
     if (get("kingLiberated")) {
-      putShop(
-        Math.max(9350, getItemPrice($item`battery (AAA)`)),
-        0,
-        availableAmount($item`battery (AAA)`),
-        $item`battery (AAA)`
-      );
-      putShop(
-        49996,
-        0,
-        availableAmount($item`pocket wish`),
-        $item`pocket wish`
-      );
+      shopIt($item`battery (AAA)`, 11400);
+      shopIt($item`pocket wish`, 49996);
+      shopIt($item`Extrovermectin™`, 53500);
+      shopIt($item`blood-drive sticker`, 138500);
+      shopIt($item`cold wad`, 1450);
+      shopIt($item`11-leaf clover`, 24000);
+      shopIt($item`bubbling tempura batter`, 21000);
     }
   }
 }

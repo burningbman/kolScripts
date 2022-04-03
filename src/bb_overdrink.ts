@@ -7,6 +7,7 @@ import {
   myDaycount,
   outfit,
   print,
+  printHtml,
   retrieveItem,
   toItem,
   use,
@@ -15,6 +16,7 @@ import {
 } from "kolmafia";
 import { $familiar, $item, $location, get, have, set } from "libram";
 import { setChoice } from "./lib";
+import bb_pirateRealm from "./bb_pirateRealm";
 
 export function main(): void {
   if (myAdventures() > 0) {
@@ -64,7 +66,7 @@ export function main(): void {
 
   set("protectAgainstOverdrink", true);
 
-  cliExecute("bb_piraterealm");
+  const pirateResults = bb_pirateRealm();
 
   if (myDaycount() !== 1) {
     cliExecute("garbo ascend");
@@ -72,4 +74,6 @@ export function main(): void {
   } else {
     cliExecute("bb_logout");
   }
+
+  printHtml(pirateResults);
 }
