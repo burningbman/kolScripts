@@ -20,6 +20,7 @@ import {
   printHtml,
   userConfirm,
   outfit,
+  myMeat,
 } from "kolmafia";
 
 import {
@@ -205,14 +206,17 @@ function runIslandTurn(): boolean {
   return get("lastEncounter") === "Your Empire of Dirt";
 }
 
-export default (): string => {
+export function main(): string {
   if (myInebriety() <= inebrietyLimit()) {
     throw "Not overdrunk for PirateRealm";
   }
 
+  const startingMeat = myMeat();
   const mate = setup();
+  const startingAdvs = myAdventures();
   let output = "";
   let done = false;
+  let startingFun = 0;
 
   while (!done) {
     const page = visitUrl("place.php?whichplace=realm_pirate");
@@ -224,11 +228,17 @@ export default (): string => {
       print("Nothing left to do in PirateRealm.", "green");
       done = true;
     }
+    if (!startingFun && parseCharPane().Fun) {
+      startingFun = parseCharPane().Fun;
+      print(`Setting fun to ${startingFun}`);
+    }
   }
 
-  if (get("lastEncounter") === "Your Empire of Dirt") {
+  const lastEncounter = get("lastEncounter");
+  if (lastEncounter === "Your Empire of Dirt") {
     const trash_results = runChoice(1);
-    let curTrash;
+    let curTrash,
+      itemMeat = 0;
     output = "<table><tr><td>#</td><td>Item</td><td>Value</td></tr>";
     do {
       curTrash = TRASH_REG_EXP.exec(trash_results);
@@ -239,11 +249,27 @@ export default (): string => {
             ? autosellPrice(item)
             : mallPrice(item);
         const itemTotal = value * parseInt(curTrash[2]);
+        itemMeat += itemTotal;
         output += `<tr><td>${curTrash[2]}</td><td>${curTrash[1]}</td><td>${itemTotal}</td></tr>`;
       }
     } while (curTrash);
+    const fun = parseCharPane().Fun - startingFun;
+    const funMeat = (mallPrice($item`PirateRealm guest pass`) / 600) * fun;
+    output += `<tr><td>${fun}</td><td>Fun</td><td>${funMeat}</td></tr>`;
+    const meat = myMeat() - startingMeat;
+    output += `<tr><td>-</td><td>Meat</td><td>${meat}</td></tr>`;
+    const advs = startingAdvs - myAdventures();
+    output += `<tr><td>-</td><td>Advs</td><td>${advs}</td></tr>`;
+    output += `<tr><td>-</td><td>MPA</td><td>${(
+      (itemMeat + funMeat + meat) /
+      advs
+    ).toFixed(0)}</td></tr>`;
   }
 
   print("PirateRealm complete", "green");
   return `${output}</table>`;
-};
+}
+
+export function bb_pirateRealm(): string {
+  return main();
+}

@@ -6,6 +6,7 @@ import {
   myAdventures,
   myDaycount,
   outfit,
+  overdrink,
   print,
   printHtml,
   retrieveItem,
@@ -16,15 +17,13 @@ import {
 } from "kolmafia";
 import { $familiar, $item, $location, get, have, set } from "libram";
 import { setChoice } from "./lib";
-import bb_pirateRealm from "./bb_pirateRealm";
+import { bb_pirateRealm } from "./bb_pirateRealm";
 
 export function main(): void {
   if (myAdventures() > 0) {
-    print("Finish running adventures", "red");
-    return;
+    throw "Finish running adventures";
   }
 
-  set("protectAgainstOverdrink", false);
   useFamiliar($familiar`Stooper`);
   drink($item`Eye and a Twist`);
 
@@ -61,10 +60,8 @@ export function main(): void {
   }
 
   have($item`emergency margarita`)
-    ? drink($item`emergency margarita`)
-    : drink($item`vintage smart drink`);
-
-  set("protectAgainstOverdrink", true);
+    ? overdrink($item`emergency margarita`)
+    : overdrink($item`vintage smart drink`);
 
   const pirateResults = bb_pirateRealm();
 
@@ -76,4 +73,8 @@ export function main(): void {
   }
 
   printHtml(pirateResults);
+}
+
+export function bb_overdrink(): void {
+  return main();
 }

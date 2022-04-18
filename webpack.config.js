@@ -17,6 +17,8 @@ module.exports = {
     bb_sea: "./src/bb_sea.ts",
     bb_kingFreed: "./src/bb_kingFreed.ts",
     bb_overdrink: "./src/bb_overdrink.ts",
+    bb_loop: "./src/bb_loop.ts",
+    bb_tcrs: "./src/bb_tcrs.ts",
   },
   mode: "development",
   devtool: false,

@@ -1,7 +1,5 @@
 import {
-  abort,
   cliExecute,
-  dadSeaMonkeeWeakness,
   eat,
   familiarWeight,
   haveEffect,
@@ -220,7 +218,7 @@ function getTrailMap() {
   }
 
   if (!haveFreeKills() && myDaycount() === 1) {
-    abort("No more free kills during first day.");
+    return "No more free kills during first day.";
   }
 
   adventure(
@@ -245,6 +243,7 @@ function getTrailMap() {
   tryUse(1, $item`Mer-kin stashbox`);
   tryUse(1, $item`Mer-kin trailmap`);
   visitUrl("monkeycastle.php?action=grandpastory&topic=currents");
+  return;
 }
 
 function freeBigBrother() {
@@ -329,8 +328,9 @@ function setup() {
 
   if (!haveEffect($effect`Fishy`)) {
     use($item`fishy pipe`);
-    if (!haveEffect($effect`Fishy`)) throw "Did not get fishy from pipe.";
   }
+
+  return haveEffect($effect`Fishy`);
 }
 
 function fightDad() {
@@ -387,20 +387,8 @@ function fightDad() {
   runChoice(1);
 
   cliExecute("ccs dad_monkee");
-
-  try {
-    runChoice(1);
-  } catch (e) {
-    print("fighting dad");
-  }
-
-  let page;
-  let round = 1;
-  do {
-    const skill = DAD_COMBAT.get(dadSeaMonkeeWeakness(round));
-    page = visitUrl(`fight.php?action=skill&whichskill=${skill.id}`);
-    round++;
-  } while (page.includes(`You're fighting Dad Sea Monkee`));
+  runChoice(1);
+  runChoice(1);
 }
 
 const setSnapperTracking = (questStatus: string) => {
@@ -417,7 +405,10 @@ const setSnapperTracking = (questStatus: string) => {
 export function main(): void {
   let stopMsg;
   const advMap: { [key: string]: number } = {};
-  setup();
+  if (!setup()) {
+    print("Didn't get fishy from pipe", "red");
+    return;
+  }
 
   while (!stopMsg) {
     const startAdventures = myAdventures();
@@ -468,6 +459,10 @@ export function main(): void {
 
   stopMsg && print(stopMsg, "red");
   print(JSON.stringify(advMap, undefined, 2), "blue");
+}
+
+export function bb_sea(): void {
+  main();
 }
 
 // meat drop, 10 item drop, 240 max, adventure underwater, equip das boot, -equip broken champagne
