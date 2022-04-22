@@ -21,6 +21,8 @@ import {
   userConfirm,
   outfit,
   myMeat,
+  fileToBuffer,
+  bufferToFile,
 } from "kolmafia";
 
 import {
@@ -215,6 +217,7 @@ export function main(): string {
   const mate = setup();
   const startingAdvs = myAdventures();
   let output = "";
+  let fileOutput = fileToBuffer("bb_piraterealm.csv").concat("\n");
   let done = false;
   let startingFun = 0;
 
@@ -251,21 +254,28 @@ export function main(): string {
         const itemTotal = value * parseInt(curTrash[2]);
         itemMeat += itemTotal;
         output += `<tr><td>${curTrash[2]}</td><td>${curTrash[1]}</td><td>${itemTotal}</td></tr>`;
+        fileOutput = fileOutput.concat(
+          `${curTrash[2]},${curTrash[1]},${itemTotal},`
+        );
       }
     } while (curTrash);
     const fun = parseCharPane().Fun - startingFun;
     const funMeat = (mallPrice($item`PirateRealm guest pass`) / 600) * fun;
-    output += `<tr><td>${fun}</td><td>Fun</td><td>${funMeat}</td></tr>`;
+    output += `<tr><td>${fun}</td><td>Fun</td><td>${funMeat.toFixed(
+      0
+    )}</td></tr>`;
     const meat = myMeat() - startingMeat;
     output += `<tr><td>-</td><td>Meat</td><td>${meat}</td></tr>`;
     const advs = startingAdvs - myAdventures();
     output += `<tr><td>-</td><td>Advs</td><td>${advs}</td></tr>`;
-    output += `<tr><td>-</td><td>MPA</td><td>${(
-      (itemMeat + funMeat + meat) /
-      advs
-    ).toFixed(0)}</td></tr>`;
+    const MPA = (itemMeat + funMeat + meat) / advs;
+    output += `<tr><td>-</td><td>MPA</td><td>${MPA.toFixed(0)}</td></tr>`;
+    fileOutput = fileOutput.concat(
+      `${funMeat.toFixed(0)},${meat},${advs},${MPA.toFixed(0)}`
+    );
   }
 
+  bufferToFile(fileOutput, "bb_piraterealm.csv");
   print("PirateRealm complete", "green");
   return `${output}</table>`;
 }

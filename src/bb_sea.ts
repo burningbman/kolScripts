@@ -117,8 +117,7 @@ function getFreeRuns(): Macro {
     .externalIf(banderReady(), Macro.step("runaway"))
     .trySkill($skill`Feel Hatred`)
     .trySkill($skill`Snokebomb`)
-    .trySkill($skill`Throw Latte on Opponent`)
-    .abort();
+    .trySkill($skill`Throw Latte on Opponent`);
 }
 
 function refillLatteIfNeeded() {
