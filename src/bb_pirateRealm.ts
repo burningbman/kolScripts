@@ -17,9 +17,6 @@ import {
   equip,
   mallPrice,
   autosellPrice,
-  printHtml,
-  userConfirm,
-  outfit,
   myMeat,
   fileToBuffer,
   bufferToFile,
@@ -36,8 +33,10 @@ import {
   ensureEffect,
   $slot,
   Macro,
+  Session,
 } from "libram";
 import { setChoice, shrug } from "./lib";
+import { garboValue } from "./session";
 
 const piratePort = "place.php?whichplace=realm_pirate&action=pr_port";
 const CHAR_PANE_REG_EXP =
@@ -208,7 +207,8 @@ function runIslandTurn(): boolean {
   return get("lastEncounter") === "Your Empire of Dirt";
 }
 
-export function main(): string {
+export function main(): { output: string; fun: number } {
+  const start = Session.current();
   if (myInebriety() <= inebrietyLimit()) {
     throw "Not overdrunk for PirateRealm";
   }
@@ -238,10 +238,11 @@ export function main(): string {
   }
 
   const lastEncounter = get("lastEncounter");
+  let fun = 0;
   if (lastEncounter === "Your Empire of Dirt") {
     const trash_results = runChoice(1);
-    let curTrash,
-      itemMeat = 0;
+    let curTrash;
+    // itemMeat = 0;
     output = "<table><tr><td>#</td><td>Item</td><td>Value</td></tr>";
     do {
       curTrash = TRASH_REG_EXP.exec(trash_results);
@@ -252,23 +253,25 @@ export function main(): string {
             ? autosellPrice(item)
             : mallPrice(item);
         const itemTotal = value * parseInt(curTrash[2]);
-        itemMeat += itemTotal;
+        // itemMeat += itemTotal;
         output += `<tr><td>${curTrash[2]}</td><td>${curTrash[1]}</td><td>${itemTotal}</td></tr>`;
         fileOutput = fileOutput.concat(
           `${curTrash[2]},${curTrash[1]},${itemTotal},`
         );
       }
     } while (curTrash);
-    const fun = parseCharPane().Fun - startingFun;
+    fun = parseCharPane().Fun - startingFun;
     const funMeat = (mallPrice($item`PirateRealm guest pass`) / 600) * fun;
-    output += `<tr><td>${fun}</td><td>Fun</td><td>${funMeat.toFixed(
-      0
-    )}</td></tr>`;
+    // output += `<tr><td>${fun}</td><td>Fun</td><td>${funMeat.toFixed(
+    //   0
+    // )}</td></tr>`;
+    const prSession = Session.diff(Session.current(), start);
+    prSession.register($item`PirateRealm fun-a-log`, fun);
     const meat = myMeat() - startingMeat;
-    output += `<tr><td>-</td><td>Meat</td><td>${meat}</td></tr>`;
+    // output += `<tr><td>-</td><td>Meat</td><td>${meat}</td></tr>`;
     const advs = startingAdvs - myAdventures();
-    output += `<tr><td>-</td><td>Advs</td><td>${advs}</td></tr>`;
-    const MPA = (itemMeat + funMeat + meat) / advs;
+    // output += `<tr><td>-</td><td>Advs</td><td>${advs}</td></tr>`;
+    const MPA = prSession.value(garboValue).total / advs;
     output += `<tr><td>-</td><td>MPA</td><td>${MPA.toFixed(0)}</td></tr>`;
     fileOutput = fileOutput.concat(
       `${funMeat.toFixed(0)},${meat},${advs},${MPA.toFixed(0)}`
@@ -277,9 +280,9 @@ export function main(): string {
 
   bufferToFile(fileOutput, "bb_piraterealm.csv");
   print("PirateRealm complete", "green");
-  return `${output}</table>`;
+  return { output: `${output}</table>`, fun };
 }
 
-export function bb_pirateRealm(): string {
+export function bb_pirateRealm(): { output: string; fun: number } {
   return main();
 }

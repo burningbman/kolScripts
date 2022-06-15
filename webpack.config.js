@@ -19,6 +19,7 @@ module.exports = {
     bb_overdrink: "./src/bb_overdrink.ts",
     bb_loop: "./src/bb_loop.ts",
     bb_tcrs: "./src/bb_tcrs.ts",
+    bb_philter: "./src/bb_philter.ts",
   },
   mode: "development",
   devtool: false,
@@ -31,14 +32,12 @@ module.exports = {
     extensions: [".ts", ".tsx", ".js", ".json"],
   },
   module: {
-    rules: [
-      {
-        // Include ts, tsx, js, and jsx files.
-        test: /\.(ts|js)x?$/,
-        // exclude: /node_modules/,
-        loader: "babel-loader",
-      },
-    ],
+    rules: [{
+      // Include ts, tsx, js, and jsx files.
+      test: /\.(ts|js)x?$/,
+      // exclude: /node_modules/,
+      loader: "babel-loader",
+    }, ],
   },
   plugins: [],
   externals: {

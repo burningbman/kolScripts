@@ -8,23 +8,15 @@ import {
   isUnrestricted,
   setAutoAttack,
   myName,
-  putShop,
-  availableAmount,
   useSkill,
-  Item,
 } from "kolmafia";
-import { getItemPrice, setClan } from "./lib";
+import { setClan } from "./lib";
 
 function shuffleArray(array: any[]) {
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [array[i], array[j]] = [array[j], array[i]];
   }
-}
-
-function shopIt(item: Item, min: number) {
-  const price = Math.max(min, getItemPrice(item));
-  putShop(price, 0, availableAmount(item), item);
 }
 
 export function main(): void {
@@ -105,15 +97,5 @@ export function main(): void {
   if (!get("breakfastCompleted")) {
     setAutoAttack($skill`Saucegeyser`.name);
     cliExecute("breakfast");
-
-    if (get("kingLiberated")) {
-      shopIt($item`battery (AAA)`, 11400);
-      shopIt($item`pocket wish`, 49996);
-      shopIt($item`Extrovermectin™`, 53500);
-      shopIt($item`blood-drive sticker`, 138500);
-      shopIt($item`cold wad`, 1450);
-      shopIt($item`11-leaf clover`, 24000);
-      shopIt($item`bubbling tempura batter`, 21000);
-    }
   }
 }

@@ -4,6 +4,7 @@ import {
   drink,
   equip,
   myAdventures,
+  myBasestat,
   myDaycount,
   outfit,
   overdrink,
@@ -15,11 +16,11 @@ import {
   useFamiliar,
   userConfirm,
 } from "kolmafia";
-import { $familiar, $item, $location, get, have, set } from "libram";
+import { $familiar, $item, $location, $stat, get, have, set } from "libram";
 import { setChoice } from "./lib";
 import { bb_pirateRealm } from "./bb_pirateRealm";
 
-export function main(): void {
+export function main(): number {
   if (myAdventures() > 0) {
     throw "Finish running adventures";
   }
@@ -36,7 +37,7 @@ export function main(): void {
     ) {
       outfit("Cloathing of Loathing");
       equip($item`das boot`);
-      return;
+      return 0;
     }
   }
 
@@ -55,7 +56,7 @@ export function main(): void {
       adventure(1, $location`The Neverending Party`);
     } else if (userConfirm("Booze/food quest, but no bell. Abort?")) {
       print("Finish NEP quest.", "red");
-      return;
+      return 0;
     }
   }
 
@@ -63,7 +64,12 @@ export function main(): void {
     ? overdrink($item`emergency margarita`)
     : overdrink($item`vintage smart drink`);
 
-  const pirateResults = bb_pirateRealm();
+  let pirateResults;
+  if (myBasestat($stat`Mysticality`) < 100) {
+    pirateResults = {output: 'Did not do pirate realm', fun: 0};
+  } else {
+    pirateResults = bb_pirateRealm();
+  }
 
   if (myDaycount() !== 1) {
     cliExecute("garbo ascend");
@@ -72,9 +78,10 @@ export function main(): void {
     cliExecute("bb_logout");
   }
 
-  printHtml(pirateResults);
+  printHtml(pirateResults.output);
+  return pirateResults.fun;
 }
 
-export function bb_overdrink(): void {
+export function bb_overdrink(): number {
   return main();
 }
