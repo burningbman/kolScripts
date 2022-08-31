@@ -1,17 +1,14 @@
 import {
   cliExecute,
   inebrietyLimit,
-  Item,
   myAdventures,
+  myClass,
   myDaycount,
   myInebriety,
   myMeat,
   print,
   putStash,
-  refreshStash,
-  stashAmount,
   takeStash,
-  waitq,
 } from "kolmafia";
 import {
   $class,
@@ -24,17 +21,16 @@ import {
   have,
   Lifestyle,
   Paths,
-  Session,
-  set
-} from "libram";
+  Session} from "libram";
+import { parse } from "path";
+import { abort } from "process";
 import {
   bb_overdrink
 } from "./bb_overdrink";
+import { isDrunk, waitForStashItems } from "./lib";
 import {
   printLoopSession
 } from "./session";
-
-const DELAY = 120;
 
 const notOverdrunk = () => {
   return myInebriety() < inebrietyLimit() ||
@@ -49,48 +45,22 @@ const logSession = (leg: string, fun: number, print ? : boolean) => {
   return session;
 };
 
-const waitForItems = (items = $items `Pantsgiving, haiku katana, Buddy Bjorn, origami pasties, repaid diaper`) => {
-  Clan.join("Alliance from Heck");
-  refreshStash();
-  const needed: Item[] = [];
-
-  items.forEach(function (item) {
-    if (!stashAmount(item)) {
-      needed.push(item);
-    }
-  });
-
-  if (get('bb_forceGarbo', false)) needed.splice(0, needed.length);
-  return needed;
-};
-
-const waitForStashItems = (items ? : Item[]) => {
-  let neededItems = waitForItems(items);
-  while (neededItems.length) {
-    const now = new Date(Date.now());
-    print(
-      `${now.getHours()}:${now.getMinutes()}: Missing ${neededItems}. Waiting ${DELAY} secs`,
-      "red"
-    );
-    waitq(DELAY);
-    neededItems = waitForItems();
-  }
-  set('bb_forceGarbo', false);
-};
-
-const runCommunityService = () => {
+const runCommunityService = (hobo?:boolean) => {
   let fun = 0;
   if (!get("kingLiberated")) cliExecute("hccs");
   if (!get("kingLiberated")) return;
   // if (!get("_fishyPipeUsed")) bb_sea();
-  if (
-    myInebriety() < inebrietyLimit() ||
-    (myInebriety() === inebrietyLimit() && myAdventures() > 0)
-  ) {
+  if (    myInebriety() < inebrietyLimit() ||    (!isDrunk() && myAdventures() > 0)  ) {
     waitForStashItems();
-    cliExecute("garbo ascend");
+    if (hobo) {
+      cliExecute("garbo nobarf ascend");
+      print('Time to hobo', 'green');
+      abort();
+    } else {
+      cliExecute('garbo ascend');
+    }
   }
-  if (myAdventures() === 0) {
+  if (myAdventures() === 0 && !isDrunk()) {
     fun = bb_overdrink();
     cliExecute("garbo ascend");
     cliExecute("hccs_pre");
@@ -99,7 +69,7 @@ const runCommunityService = () => {
   logSession('cs', fun);
 
   if (myAdventures() === 0 && myInebriety() > inebrietyLimit()) {
-    ascend(Paths.Unrestricted, $class `Seal Clubber`, Lifestyle.casual, 'platypus', $item `astral six-pack`, $item `astral trousers`);
+    ascend(Paths.Unrestricted,$class `Seal Clubber`, Lifestyle.casual, 'platypus', $item `astral six-pack`, $item `astral trousers`);
     runCasual();
   }
 };
@@ -108,7 +78,7 @@ const storeLog = () => {
   Session.current().toFile("bb_session_custom.json");
 };
 
-const runCasual = () => {
+const runCasual = (stopAfterTower?:boolean, hobo?:boolean) => {
   if (inebrietyLimit() <= 15) {
     if (!have($item `Greatest American Pants`)) {
       waitForStashItems($items `Greatest American Pants`);
@@ -118,13 +88,23 @@ const runCasual = () => {
     Clan.join("Alliance from Heck");
     putStash($item `Greatest American Pants`, 1);
   }
+  if (stopAfterTower) {
+    return;
+  }
   let fun = 0;
   // make sure steel organ was gotten
   if (inebrietyLimit() > 15) {
     if (notOverdrunk()) {
       waitForStashItems();
-      cliExecute("garbo");
-      fun = bb_overdrink();
+      if (hobo) {
+        cliExecute("garbo nobarf");
+        print('Ready for hobo.', 'green');
+      }
+      else {
+        cliExecute('garbo');
+        fun = bb_overdrink();
+        cliExecute('garbo');
+      }
     }
     const session = logSession('casual', fun);
     const allSessions = session.add(Session.fromFile('bb_session_aftercore.json')).add(Session.fromFile('bb_session_cs.json'));
@@ -132,35 +112,54 @@ const runCasual = () => {
   }
 };
 
-const runAftercore = () => {
+const runAftercore = (looping ? : boolean) => {
   if (notOverdrunk()) {
     waitForStashItems();
     cliExecute("garbo ascend");
-  const fun = bb_overdrink();
-  logSession('aftercore', fun, true);
+    const fun = bb_overdrink();
+    logSession('aftercore', fun, true);
   }
   print('Ready to ascend', 'green');
-  if (myAdventures() === 0 && myInebriety() > inebrietyLimit()) {
+  if (looping && myAdventures() === 0 && myInebriety() > inebrietyLimit()) {
     const map = new Map();
-    map.set($skill`Quantum Movement`, Lifestyle.hardcore);
+    map.set($skill `Quantum Movement`, Lifestyle.hardcore);
     ascend(Paths.CommunityService, $class `Pastamancer`, Lifestyle.normal, 'blender', $item `astral six-pack`, $item `astral trousers`, map);
     runCommunityService();
   }
 };
 
+function parseArgs(args: string): { aftercore: boolean, casual: boolean, hobo: boolean } {
+  args = args || '';
+  return {
+    aftercore: args.includes('aftercore'),
+    casual: args.includes('casual'),
+    hobo: args.includes('hobo')
+  };
+}
+
 export function main(args: string): void {
-  if (args) {
-    storeLog();
+  const options = parseArgs(args);
+
+  if (options.aftercore) {
+      print('Running aftercore only.');
+      runAftercore();
+      return;
+    } else if (options.casual) {
+      runCasual(true, options.hobo);
+      return;
+    } else if (args) {
+      print('Saving log.');
+      storeLog();
     return;
   }
   if (myDaycount() === 1) {
     if (myMeat() < 20000 || (get('kingLiberated') && get('questL02Larva') === 'unstarted')) {
-      runCommunityService();
+      runCommunityService(options.hobo);
     } else {
       runCasual();
     }
   }
-  if (myDaycount() === 2) {
-    runAftercore();
+  else {
+    runAftercore(true);
   }
 }

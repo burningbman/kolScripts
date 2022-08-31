@@ -1,4 +1,4 @@
-import { get, $item, have, $skill } from "libram";
+import { get, $item, have, $skill, Macro } from "libram";
 import {
   use,
   visitUrl,
@@ -9,6 +9,8 @@ import {
   setAutoAttack,
   myName,
   useSkill,
+  haveEquipped,
+  equip,
 } from "kolmafia";
 import { setClan } from "./lib";
 
@@ -30,6 +32,8 @@ export function main(): void {
     use($item`Universal Seasoning`);
     use($item`Universal Seasoning`);
   }
+
+  haveEquipped($item`June cleaver`) && equip($item`Fourth of May Cosplay Saber`);
 
   if (
     !get("_glitchItemImplemented") &&
@@ -95,7 +99,6 @@ export function main(): void {
   }
 
   if (!get("breakfastCompleted")) {
-    setAutoAttack($skill`Saucegeyser`.name);
     cliExecute("breakfast");
   }
 }

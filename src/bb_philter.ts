@@ -8,12 +8,13 @@ function shopIt(item: Item, min: number) {
 }
 
 export function main(): void {
-  shopIt($item`battery (AAA)`, 10800);
+  shopIt($item`battery (AAA)`, 10390);
   shopIt($item`pocket wish`, 49975);
   shopIt($item`Extrovermectin™`, 49400);
   shopIt($item`blood-drive sticker`, 132500);
   shopIt($item`cold wad`, 949);
   shopIt($item`11-leaf clover`, 24000);
   shopIt($item`bubbling tempura batter`, 21000);
+  cliExecute('refresh all');
   cliExecute('philter');
 }

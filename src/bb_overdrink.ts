@@ -3,9 +3,12 @@ import {
   cliExecute,
   drink,
   equip,
+  inebrietyLimit,
   myAdventures,
   myBasestat,
   myDaycount,
+  myFamiliar,
+  myInebriety,
   outfit,
   overdrink,
   print,
@@ -15,18 +18,29 @@ import {
   use,
   useFamiliar,
   userConfirm,
+  visitUrl,
 } from "kolmafia";
 import { $familiar, $item, $location, $stat, get, have, set } from "libram";
 import { setChoice } from "./lib";
 import { bb_pirateRealm } from "./bb_pirateRealm";
 
-export function main(): number {
-  if (myAdventures() > 0) {
+export function main(arg?: string): number {
+  if (myAdventures() > 0 && myFamiliar() !== $familiar`Stooper`) {
     throw "Finish running adventures";
   }
 
-  useFamiliar($familiar`Stooper`);
-  drink($item`Eye and a Twist`);
+  if (myFamiliar() !== $familiar`Stooper`) {
+    useFamiliar($familiar`Stooper`);
+    if (myInebriety() < inebrietyLimit()) {
+      const stillSuitAdvText = visitUrl("inventory.php?action=distill&pwd", true).match(/(\d*) adventures/);
+      if (stillSuitAdvText && parseInt(stillSuitAdvText[1]) >= 8) {
+        visitUrl("choice.php?pwd&whichchoice=1476&option=1", true);
+      } else {
+        visitUrl("choice.php?pwd&whichchoice=1476&option=2", true);
+        drink($item`Eye and a Twist`);
+      }
+    }
+  }
 
   // Free dad sea monkee before overdrinking if almost done
   if (get("seahorseName") && get("merkinQuestPath") !== "done") {
@@ -63,6 +77,10 @@ export function main(): number {
   have($item`emergency margarita`)
     ? overdrink($item`emergency margarita`)
     : overdrink($item`vintage smart drink`);
+  
+  if (arg) {
+    return 0;
+  }
 
   let pirateResults;
   if (myBasestat($stat`Mysticality`) < 100) {
@@ -82,6 +100,6 @@ export function main(): number {
   return pirateResults.fun;
 }
 
-export function bb_overdrink(): number {
-  return main();
+export function bb_overdrink(arg?: string): number {
+  return main(arg);
 }

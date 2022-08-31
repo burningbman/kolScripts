@@ -49,6 +49,15 @@ import {
   Skill,
   shopPrice,
   mallPrice,
+  refreshStash,
+  stashAmount,
+  waitq,
+  getStash,
+  takeStash,
+  putStash,
+  getClanId,
+  myClass,
+  toClass,
 } from "kolmafia";
 import {
   $effect,
@@ -60,6 +69,9 @@ import {
   $slot,
   get,
   Macro,
+  $items,
+  Clan,
+  set,
 } from "libram";
 
 export function adventureHere(
@@ -375,8 +387,8 @@ export function ensureOde(turns: number): void {
 export function lastAdventureText(): string {
   const log = sessionLogs(1)[0];
   //return log.substring(log.lastIndexOf('['+myTurncount()+']'));
-  return log.lastIndexOf("[" + myTurncount() + 1 + "]") > 0
-    ? log.substring(log.lastIndexOf("[" + myTurncount() + 1 + "]"))
+  return log.lastIndexOf("[" + (myTurncount() + 1) + "]") > 0
+    ? log.substring(log.lastIndexOf("[" + (myTurncount() + 1) + "]"))
     : log.substring(log.lastIndexOf("[" + myTurncount() + "]"));
 }
 
@@ -432,3 +444,52 @@ export const getItemPrice = (item: Item): number => {
 
   return shop;
 };
+
+
+
+const waitForItems = (items = $items `Pantsgiving, haiku katana, Buddy Bjorn, origami pasties, repaid diaper`) => {
+  Clan.join("Alliance from Heck");
+  refreshStash();
+  const needed: Item[] = [];
+
+  items.forEach(function (item) {
+    if (!stashAmount(item)) {
+      needed.push(item);
+    }
+  });
+
+  if (get('bb_forceGarbo', false)) needed.splice(0, needed.length);
+  return needed;
+};
+
+const DELAY = 60;
+
+const padNum = (num: number, pad: number) => {
+  return num.toString().padStart(pad, '0');
+};
+
+export const waitForStashItems = (items ? : Item[]): void => {
+  let neededItems = waitForItems(items);
+  while (neededItems.length) {
+    const now = new Date(Date.now());
+    print(
+      `${padNum(now.getHours() % 12, 2)}:${padNum(now.getMinutes(),2)}: Missing ${neededItems}. Waiting ${DELAY} secs`,
+      "red"
+    );
+    waitq(DELAY);
+    neededItems = waitForItems(items);
+  }
+  set('bb_forceGarbo', false);
+};
+
+export const returnItems = (items: Item[]): void => {
+  const clan = getClanId();
+  Clan.join("Alliance from Heck");
+  items.forEach((item) => {
+    print(`Returning ${item}`);
+    putStash(item, 1);
+  });
+  Clan.join(clan);
+};
+
+export const isGreyYou = (): boolean => (myClass() === toClass('Grey Goo'));

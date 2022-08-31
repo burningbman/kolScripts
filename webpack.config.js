@@ -20,6 +20,8 @@ module.exports = {
     bb_loop: "./src/bb_loop.ts",
     bb_tcrs: "./src/bb_tcrs.ts",
     bb_philter: "./src/bb_philter.ts",
+    bb_postGloop: "./src/bb_postGloop.ts",
+    bb_preAdventureAscending: "./src/bb_preAdventureAscending.ts",
   },
   mode: "development",
   devtool: false,
@@ -30,6 +32,9 @@ module.exports = {
   },
   resolve: {
     extensions: [".ts", ".tsx", ".js", ".json"],
+      fallback: {
+        "process": false
+      }
   },
   module: {
     rules: [{
@@ -37,10 +42,10 @@ module.exports = {
       test: /\.(ts|js)x?$/,
       // exclude: /node_modules/,
       loader: "babel-loader",
-    }, ],
+    },],
   },
   plugins: [],
   externals: {
     kolmafia: "commonjs kolmafia",
-  },
+  }
 };
