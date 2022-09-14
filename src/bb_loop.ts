@@ -1,5 +1,6 @@
 import {
   cliExecute,
+  equip,
   inebrietyLimit,
   myAdventures,
   myClass,
@@ -14,7 +15,9 @@ import {
   $class,
   $item,
   $items,
+  $path,
   $skill,
+  $slot,
   ascend,
   Clan,
   get,
@@ -69,7 +72,7 @@ const runCommunityService = (hobo?:boolean) => {
   logSession('cs', fun);
 
   if (myAdventures() === 0 && myInebriety() > inebrietyLimit()) {
-    ascend(Paths.Unrestricted,$class `Seal Clubber`, Lifestyle.casual, 'platypus', $item `astral six-pack`, $item `astral trousers`);
+    ascend($path`none`,$class `Seal Clubber`, Lifestyle.casual, 'platypus', $item `astral six-pack`, $item `astral trousers`);
     runCasual();
   }
 };
@@ -84,9 +87,13 @@ const runCasual = (stopAfterTower?:boolean, hobo?:boolean) => {
       waitForStashItems($items `Greatest American Pants`);
       takeStash($item `Greatest American Pants`, 1);
     }
-    cliExecute('loopcasual');
-    Clan.join("Alliance from Heck");
-    putStash($item `Greatest American Pants`, 1);
+    try {
+      cliExecute('loopcasual');
+    } finally {
+      Clan.join("Alliance from Heck");
+      equip($slot`pants`, $item`none`);
+      putStash($item`Greatest American Pants`, 1);
+    }
   }
   if (stopAfterTower) {
     return;
@@ -104,6 +111,7 @@ const runCasual = (stopAfterTower?:boolean, hobo?:boolean) => {
         cliExecute('garbo');
         fun = bb_overdrink();
         cliExecute('garbo');
+        cliExecute('bb_logout');
       }
     }
     const session = logSession('casual', fun);
@@ -123,7 +131,7 @@ const runAftercore = (looping ? : boolean) => {
   if (looping && myAdventures() === 0 && myInebriety() > inebrietyLimit()) {
     const map = new Map();
     map.set($skill `Quantum Movement`, Lifestyle.hardcore);
-    ascend(Paths.CommunityService, $class `Pastamancer`, Lifestyle.normal, 'blender', $item `astral six-pack`, $item `astral trousers`, map);
+    ascend($path`Community Service`, $class `Pastamancer`, Lifestyle.normal, 'blender', $item `astral six-pack`, $item `astral trousers`, map);
     runCommunityService();
   }
 };

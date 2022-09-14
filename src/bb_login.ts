@@ -98,7 +98,12 @@ export function main(): void {
     }
   }
 
-  if (!get("breakfastCompleted")) {
-    cliExecute("breakfast");
+  try {
+    if (!get("breakfastCompleted")) {
+      Macro.skill($skill`Saucestorm`).repeat().setAutoAttack();
+      cliExecute("breakfast");
+    }
+  } finally {
+    setAutoAttack(0);
   }
 }

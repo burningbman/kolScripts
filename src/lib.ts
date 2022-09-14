@@ -447,7 +447,7 @@ export const getItemPrice = (item: Item): number => {
 
 
 
-const waitForItems = (items = $items `Pantsgiving, haiku katana, Buddy Bjorn, origami pasties, repaid diaper`) => {
+const waitForItems = (items = $items `Pantsgiving, haiku katana, Buddy Bjorn, repaid diaper`) => {
   Clan.join("Alliance from Heck");
   refreshStash();
   const needed: Item[] = [];

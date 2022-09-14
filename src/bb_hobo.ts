@@ -103,6 +103,7 @@ import {
   Lifestyle,
   $monster,
   uneffect,
+  $path,
 } from "libram";
 
 import {
@@ -1401,10 +1402,10 @@ function runOption(actions: string[], stashItems: Item[]) {
       cliExecute('hccs_pre');
       if (myDaycount() === 2) {
         if (userConfirm('Ascend into CS?')) {
-          ascend(Paths.CommunityService, $class`Pastamancer`, Lifestyle.normal, 'blender', $item`astral six-pack`, $item`astral trousers`);
+          ascend($path`Community Service`, $class`Pastamancer`, Lifestyle.normal, 'blender', $item`astral six-pack`, $item`astral trousers`);
           cliExecute('hccs');
         } else {
-          ascend(Paths.GreyYou, toClass('Grey Goo'), Lifestyle.softcore, 'blender');
+          ascend($path`Grey You`, toClass('Grey Goo'), Lifestyle.softcore, 'blender');
           // Clear intro adventure
           set("choiceAdventure1464", 1);
           if (visitUrl("main.php").includes("somewhat-human-shaped mass of grey goo nanites"))
@@ -1420,7 +1421,7 @@ function runOption(actions: string[], stashItems: Item[]) {
           print('Ready for some goo hobo action.');
         }
       } else {
-        ascend(Paths.Unrestricted, $class`Seal Clubber`, Lifestyle.casual, 'platypus', $item`astral six-pack`,);
+        ascend($path`none`, $class`Seal Clubber`, Lifestyle.casual, 'platypus', $item`astral six-pack`,);
       }
       break;
     }

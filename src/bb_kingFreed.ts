@@ -20,9 +20,12 @@ export function main(): void {
   cliExecute("hagnk all");
   cliExecute("acquire bitchin meatcar");
   uneffect($effect`Feeling Lost`);
-  buy($item`clockwork maid`, 1, 15000);
-  use($item`clockwork maid`);
   visitUrl("peevpee.php?action=smashstone&confirm=on");
+
+  if (get('ascensionsToday') === 2) {
+    buy($item`clockwork maid`, 1, 15000);
+    use($item`clockwork maid`);
+  }
 
   // Create a key lime pie
   if (!get("lockPicked")) {
