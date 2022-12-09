@@ -58,6 +58,9 @@ import {
   getClanId,
   myClass,
   toClass,
+  fileToBuffer,
+  todayToString,
+  gametimeToInt,
 } from "kolmafia";
 import {
   $effect,
@@ -72,6 +75,8 @@ import {
   $items,
   Clan,
   set,
+  $class,
+  Lifestyle,
 } from "libram";
 
 export function adventureHere(
@@ -133,8 +138,8 @@ export function ensureHermitItem(quantity: number, it: Item): void {
   const count = quantity - availableAmount(it);
   while (
     availableAmount($item`worthless trinket`) +
-      availableAmount($item`worthless gewgaw`) +
-      availableAmount($item`worthless knick-knack`) <
+    availableAmount($item`worthless gewgaw`) +
+    availableAmount($item`worthless knick-knack`) <
     count
   ) {
     ensureItem(1, $item`chewing gum on a string`);
@@ -445,9 +450,13 @@ export const getItemPrice = (item: Item): number => {
   return shop;
 };
 
+const timeUntilRollover = () => {
+  return 24 - (gametimeToInt() / 1000 / 60 / 60);
+};
 
-
-const waitForItems = (items = $items `Pantsgiving, haiku katana, Buddy Bjorn, repaid diaper`) => {
+const waitForItems = (items = $items`Pantsgiving, Buddy Bjorn`) => {
+  myClass() !== $class`Seal Clubber` && items.push($item`haiku katana`);
+  const clan = getClanId();
   Clan.join("Alliance from Heck");
   refreshStash();
   const needed: Item[] = [];
@@ -458,7 +467,8 @@ const waitForItems = (items = $items `Pantsgiving, haiku katana, Buddy Bjorn, re
     }
   });
 
-  if (get('bb_forceGarbo', false)) needed.splice(0, needed.length);
+  if (get('bb_forceGarbo', false) || timeUntilRollover() < 4) needed.splice(0, needed.length);
+  Clan.join(clan);
   return needed;
 };
 
@@ -468,12 +478,12 @@ const padNum = (num: number, pad: number) => {
   return num.toString().padStart(pad, '0');
 };
 
-export const waitForStashItems = (items ? : Item[]): void => {
+export const waitForStashItems = (items?: Item[]): void => {
   let neededItems = waitForItems(items);
   while (neededItems.length) {
     const now = new Date(Date.now());
     print(
-      `${padNum(now.getHours() % 12, 2)}:${padNum(now.getMinutes(),2)}: Missing ${neededItems}. Waiting ${DELAY} secs`,
+      `${padNum(now.getHours() % 12, 2)}:${padNum(now.getMinutes(), 2)}: Missing ${neededItems}. Waiting ${DELAY} secs`,
       "red"
     );
     waitq(DELAY);
@@ -493,3 +503,25 @@ export const returnItems = (items: Item[]): void => {
 };
 
 export const isGreyYou = (): boolean => (myClass() === toClass('Grey Goo'));
+
+export function canAscendNoncasual(): boolean {
+  const sessionLog = fileToBuffer(`${myName()}_${todayToString()}.txt`);
+  return !/Ascend as a (?:Normal|Hardcore) .+? banking \d+ Karma./.test(sessionLog);
+}
+
+export function canAscendCasual(): boolean {
+  const sessionLog = fileToBuffer(`${myName()}_${todayToString()}.txt`);
+  return !/Ascend as a Casual .+? banking \d+ Karma./.test(sessionLog);
+}
+
+export function ascensionsToday(): Lifestyle[] {
+  const sessionLog = fileToBuffer(`${myName()}_${todayToString()}.txt`);
+  const pattern = /Ascend as a (\w+) .+?, banking \d+ Karma./g;
+  let match;
+  const result = [];
+  while ((match = pattern.exec(sessionLog))) {
+    const name = match[1].toLowerCase();
+    result.push(Lifestyle[name as keyof typeof Lifestyle]);
+  }
+  return result;
+}
