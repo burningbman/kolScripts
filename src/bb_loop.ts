@@ -1,6 +1,7 @@
 import {
   cliExecute,
   equip,
+  getWorkshed,
   inebrietyLimit,
   myAdventures,
   myDaycount,
@@ -10,6 +11,8 @@ import {
   print,
   putStash,
   takeStash,
+  toItem,
+  use,
 } from "kolmafia";
 import {
   $class,
@@ -24,13 +27,14 @@ import {
   get,
   have,
   Lifestyle,
-  Session
+  Session,
+  TrainSet
 } from "libram";
 import { abort } from "process";
 import {
   bb_overdrink
 } from "./bb_overdrink";
-import { canAscendCasual, canAscendNoncasual, createPermOptions, isDrunk, waitForStashItems } from "./lib";
+import { canAscendCasual, canAscendNoncasual, createPermOptions, isDrunk, tryUse, waitForStashItems } from "./lib";
 import {
   printLoopSession
 } from "./session";
@@ -66,6 +70,11 @@ const runCasual = () => {
   let noError = true;
   if (inebrietyLimit() <= 15) {
     print('Running casual', 'green');
+
+    if (getWorkshed() !== toItem('model train set')) {
+      setupTrain();
+    }
+
     if (!have($item`Greatest American Pants`)) {
       waitForStashItems($items`Greatest American Pants`);
       takeStash($item`Greatest American Pants`, 1);
@@ -88,8 +97,30 @@ const runCasual = () => {
   return noError;
 };
 
+function setupTrain() {
+  use(toItem(`model train set`));
+  TrainSet.setConfiguration([TrainSet.Station.WATER_BRIDGE,
+  TrainSet.Station.VIEWING_PLATFORM,
+  TrainSet.Station.BRAIN_SILO,
+  TrainSet.Station.COAL_HOPPER,
+  TrainSet.Station.GAIN_MEAT,
+  TrainSet.Station.CANDY_FACTORY,
+  TrainSet.Station.ORE_HOPPER,
+  TrainSet.Station.TRACKSIDE_DINER]);
+}
+
 const runAftercore = () => {
   let noError = true;
+  const workshed = getWorkshed();
+  let garboWorkshed = '';
+
+  // make sure workshed is setup correctly
+  if (!get('_workshedItemUsed')) {
+    if (workshed !== $item`cold medicine cabinet` && workshed !== toItem('model train set')) {
+      setupTrain();
+    }
+    garboWorkshed = `workshed=${workshed === $item`cold medicine cabinet` ? 'trainrealm' : 'cmc'}`;
+  }
 
   if (myAdventures() > 0 || myInebriety() <= inebrietyLimit()) {
     print('Running aftercore', 'green');
@@ -99,8 +130,7 @@ const runAftercore = () => {
 
     if (myAdventures() > 0 && myInebriety() <= inebrietyLimit()) {
       const ascend = done ? '' : 'ascend';
-      noError = cliExecute(`garbo ${ascend}`);
-      // noError = cliExecute('railo car=dining priority=elves');
+      noError = cliExecute(`garbo ${ascend} ${garboWorkshed}`);
     }
 
     if (!noError) {
@@ -113,7 +143,6 @@ const runAftercore = () => {
     }
 
     if (!done) {
-      // noError = cliExecute('railo car=dining priority=elves');
       noError = cliExecute('garbo ascend');
     }
 
@@ -171,10 +200,16 @@ export function main(args: string): void {
         } else {
           if (canAscendNoncasual()) {
             print('Ascending into Community Service', 'green');
-            ascend($path`Community Service`, $class`Pastamancer`, Lifestyle.normal, 'blender', $item`astral six-pack`, $item`astral trousers`, createPermOptions().permSkills);
+            ascend($path`Community Service`, $class`Pastamancer`, Lifestyle.normal, 'blender', $item`astral six-pack`, $item`astral trousers`, {
+              permSkills: createPermOptions().permSkills,
+              neverAbort: false
+            });
           } else if (canAscendCasual()) {
             print('Ascending into casual', 'green');
-            ascend($path`none`, $class`Seal Clubber`, Lifestyle.casual, 'platypus', $item`astral six-pack`, $item`astral trousers`, createPermOptions().permSkills);
+            ascend($path`none`, $class`Seal Clubber`, Lifestyle.casual, 'platypus', $item`astral six-pack`, $item`astral trousers`, {
+              permSkills: createPermOptions().permSkills,
+              neverAbort: false
+            });
           } else {
             print('In an odd state. Not sure what to do.', 'red');
             break;
