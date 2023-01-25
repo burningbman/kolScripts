@@ -20,6 +20,8 @@ import {
   myMeat,
   fileToBuffer,
   bufferToFile,
+  myBuffedstat,
+  myPrimestat,
 } from "kolmafia";
 
 import {
@@ -198,7 +200,6 @@ function runSailingTurn(mate: string): void {
 
 function runIslandTurn(): boolean {
   ensureEffect($effect`Feeling Excited`);
-  ensureEffect($effect`The Magical Mojomuscular Melody`);
   maximizeCached(["meat drop"], {
     forceEquip: $items`PirateRealm eyepatch, lucky gold ring, Red Roger's red left foot, PirateRealm party hat, Drunkula's wineglass`,
   });
@@ -234,6 +235,10 @@ export function main(): { output: string; fun: number } {
     if (!startingFun && parseCharPane().Fun) {
       startingFun = parseCharPane().Fun;
       print(`Setting fun to ${startingFun}`);
+    }
+    if (myBuffedstat(myPrimestat()) > 100) {
+      done = true;
+      print(`Over 100 ${myPrimestat()} while in PirateRealm`, 'red');
     }
   }
 
