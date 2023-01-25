@@ -35,7 +35,7 @@
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.23.0",
     "@babel/runtime": "^7.14.8",
-    "kolmafia": "^4.0.0",
-    "libram": "^0.7.1"
+    "kolmafia": "^5.27102.0",
+    "libram": "^0.7.9"
   }
 }
