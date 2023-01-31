@@ -4,9 +4,7 @@ import {
   getWorkshed,
   inebrietyLimit,
   myAdventures,
-  myDaycount,
   myInebriety,
-  myMeat,
   myPath,
   print,
   putStash,
@@ -20,7 +18,6 @@ import {
   $item,
   $items,
   $path,
-  $skill,
   $slot,
   ascend,
   Clan,
@@ -30,11 +27,10 @@ import {
   Session,
   TrainSet
 } from "libram";
-import { abort } from "process";
 import {
   bb_overdrink
 } from "./bb_overdrink";
-import { canAscendCasual, canAscendNoncasual, createPermOptions, isDrunk, tryUse, waitForStashItems } from "./lib";
+import { canAscendNoncasual, createPermOptions, waitForStashItems } from "./lib";
 import {
   printLoopSession
 } from "./session";
@@ -126,7 +122,7 @@ const runAftercore = () => {
     print('Running aftercore', 'green');
     waitForStashItems();
 
-    const done = !canAscendCasual() && !canAscendNoncasual();
+    const done = !canAscendNoncasual();
 
     if (myAdventures() > 0 && myInebriety() <= inebrietyLimit()) {
       const ascend = done ? '' : 'ascend';
@@ -146,7 +142,7 @@ const runAftercore = () => {
       noError = cliExecute('garbo ascend');
     }
 
-    const log = canAscendNoncasual() ? 'aftercore' : canAscendCasual() ? 'cs' : 'casual';
+    const log = canAscendNoncasual() ? 'aftercore' : 'cs';
     const session = logSession(log, fun, true);
     print('Aftercore complete', 'green');
 
@@ -189,7 +185,7 @@ export function main(args: string): void {
   }
 
   let noError = true;
-  while (!have($effect`Beaten Up`) && noError && (canAscendCasual() || canAscendNoncasual() || (myInebriety() <= inebrietyLimit()))) {
+  while (!have($effect`Beaten Up`) && noError && (canAscendNoncasual() || (myInebriety() <= inebrietyLimit()))) {
     print('Checking what step to run next', 'green');
     if (myPath() === $path`none`) {
       if (!get('kingLiberated')) {
@@ -201,12 +197,6 @@ export function main(args: string): void {
           if (canAscendNoncasual()) {
             print('Ascending into Community Service', 'green');
             ascend($path`Community Service`, $class`Pastamancer`, Lifestyle.normal, 'blender', $item`astral six-pack`, $item`astral trousers`, {
-              permSkills: createPermOptions().permSkills,
-              neverAbort: false
-            });
-          } else if (canAscendCasual()) {
-            print('Ascending into casual', 'green');
-            ascend($path`none`, $class`Seal Clubber`, Lifestyle.casual, 'platypus', $item`astral six-pack`, $item`astral trousers`, {
               permSkills: createPermOptions().permSkills,
               neverAbort: false
             });
