@@ -11,6 +11,7 @@ import {
   useSkill,
   haveEquipped,
   equip,
+  getCampground,
 } from "kolmafia";
 import { setClan } from "./lib";
 
@@ -54,6 +55,12 @@ export function main(): void {
       cliExecute("fortune cheesefax");
       wait(5);
     }
+  }
+
+  if (getCampground()[$item`packet of rock seeds`.name]) {
+    visitUrl('campground.php?action=r1garden');
+    visitUrl('campground.php?action=r2garden');
+    visitUrl('campground.php?action=r3garden');
   }
 
   if (get("kingLiberated")) {
