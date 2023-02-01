@@ -72,20 +72,7 @@ export function main(): void {
 
     // Cargo Shorts
     if (!get("_cargoPocketEmptied")) {
-      const deskBellPockets = [517, 590, 653, 553, 587];
-      shuffleArray(deskBellPockets);
-
-      const emptiedPockets = get("cargoPocketsEmptied");
-      const pocket = deskBellPockets.find((pocketNum) => {
-        if (typeof emptiedPockets === "number") {
-          return emptiedPockets !== pocketNum;
-        }
-
-        return !emptiedPockets.includes(pocketNum.toString());
-      });
-      if (pocket) {
-        cliExecute(`cargo ${pocket}`);
-      }
+      cliExecute('cargo');
     }
 
     // Boxing Daycare
