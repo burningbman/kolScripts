@@ -54,7 +54,11 @@ const runCommunityService = () => {
     print('Running Community Service', 'green');
     noError = cliExecute("hccs");
   }
-  if (!get("kingLiberated")) throw new Error('hccs did not complete');
+  if (!get("kingLiberated")) {
+    throw new Error('hccs did not complete');
+  } else if (!get("lockPicked")) {
+    cliExecute('bb_kingFreed');
+  }
   return noError;
 };
 
@@ -109,6 +113,8 @@ const runAftercore = () => {
   let noError = true;
   const workshed = getWorkshed();
   let garboWorkshed = '';
+  const done = !canAscendNoncasual();
+  let fun = 0;
 
   // make sure workshed is setup correctly
   if (!get('_workshedItemUsed')) {
@@ -122,8 +128,6 @@ const runAftercore = () => {
     print('Running aftercore', 'green');
     waitForStashItems();
 
-    const done = !canAscendNoncasual();
-
     if (myAdventures() > 0 && myInebriety() <= inebrietyLimit()) {
       const ascend = done ? '' : 'ascend';
       noError = cliExecute(`garbo ${ascend} ${garboWorkshed}`);
@@ -133,7 +137,6 @@ const runAftercore = () => {
       return noError;
     }
 
-    let fun = 0;
     if (myInebriety() <= inebrietyLimit()) {
       fun = bb_overdrink();
     }
@@ -141,15 +144,15 @@ const runAftercore = () => {
     if (!done) {
       noError = cliExecute('garbo ascend');
     }
+  }
 
-    const log = canAscendNoncasual() ? 'aftercore' : 'cs';
-    const session = logSession(log, fun, true);
-    print('Aftercore complete', 'green');
+  const log = canAscendNoncasual() ? 'aftercore' : 'cs';
+  const session = logSession(log, fun, true);
+  print('Aftercore complete', 'green');
 
-    if (done) {
-      const allSessions = session.add(Session.fromFile('bb_session_aftercore.json')).add(Session.fromFile('bb_session_cs.json'));
-      printLoopSession(allSessions, 'full loop');
-    }
+  if (done) {
+    const allSessions = session.add(Session.fromFile('bb_session_cs.json'));
+    printLoopSession(allSessions, 'full loop');
   }
 
   return noError;

@@ -22,6 +22,7 @@ import {
   bufferToFile,
   myBuffedstat,
   myPrimestat,
+  Stat,
 } from "kolmafia";
 
 import {
@@ -236,9 +237,9 @@ export function main(): { output: string; fun: number } {
       startingFun = parseCharPane().Fun;
       print(`Setting fun to ${startingFun}`);
     }
-    if (myBuffedstat(myPrimestat()) > 100) {
+    if (Stat.all().find((stat) => myBuffedstat(stat) > 100)) {
       done = true;
-      print(`Over 100 ${myPrimestat()} while in PirateRealm`, 'red');
+      print(`Over 100 in a stat while in PirateRealm`, 'red');
     }
   }
 

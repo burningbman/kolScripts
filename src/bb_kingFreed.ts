@@ -22,7 +22,7 @@ export function main(): void {
   uneffect($effect`Feeling Lost`);
   visitUrl("peevpee.php?action=smashstone&confirm=on");
 
-  if (get('ascensionsToday') === 2) {
+  if (get('ascensionsToday') === 1) {
     buy($item`clockwork maid`, 1, 15000);
     use($item`clockwork maid`);
   }
@@ -34,7 +34,7 @@ export function main(): void {
     useSkill($skill`Lock Picking`);
     create(
       $items`Boris's key lime pie, Jarlsberg's key lime pie, Sneaky Pete's key lime pie`[
-        keyIndex - 1
+      keyIndex - 1
       ]
     );
   }
