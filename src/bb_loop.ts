@@ -30,7 +30,7 @@ import {
 import {
   bb_overdrink
 } from "./bb_overdrink";
-import { canAscendNoncasual, createPermOptions, waitForStashItems } from "./lib";
+import { canAscendNoncasual, waitForStashItems } from "./lib";
 import {
   printLoopSession
 } from "./session";
@@ -198,11 +198,11 @@ export function main(args: string): void {
           noError = runAftercore();
         } else {
           if (canAscendNoncasual()) {
-            print('Ascending into Community Service', 'green');
-            ascend($path`Community Service`, $class`Pastamancer`, Lifestyle.normal, 'blender', $item`astral six-pack`, $item`astral trousers`, {
-              permSkills: createPermOptions().permSkills,
-              neverAbort: false
-            });
+            noError = cliExecute('hccs_pre');
+            if (noError) {
+              print('Ascending into Community Service', 'green');
+              noError = cliExecute('hccs_ascend');
+            }
           } else {
             print('In an odd state. Not sure what to do.', 'red');
             break;

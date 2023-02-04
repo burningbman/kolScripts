@@ -527,16 +527,3 @@ export function ascensionsToday(): Lifestyle[] {
   }
   return result;
 }
-
-export function createPermOptions(): { permSkills: Map<Skill, Lifestyle>; neverAbort: boolean } {
-  return {
-    permSkills: new Map(
-      Skill.all()
-        .filter(
-          (skill) => have(skill) && skill.permable && getPermedSkills()[skill.name] === undefined
-        )
-        .map((skill) => [skill, Lifestyle.hardcore])
-    ),
-    neverAbort: false,
-  };
-}

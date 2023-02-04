@@ -168,7 +168,7 @@ function goShopping(loot: { [key: string]: number }): void {
 }
 
 function runSailingTurn(mate: string): void {
-  maximizeCached(["meat drop"], {
+  maximizeCached(["meat drop, .1 mus, 100 max, .1 myst, 100 max, .1 mox, 100 max"], {
     forceEquip: $items`PirateRealm eyepatch, lucky gold ring, Red Roger's red right foot, PirateRealm party hat, Drunkula's wineglass`,
   });
   const LOOT = parseCharPane();
@@ -201,7 +201,7 @@ function runSailingTurn(mate: string): void {
 
 function runIslandTurn(): boolean {
   ensureEffect($effect`Feeling Excited`);
-  maximizeCached(["meat drop"], {
+  maximizeCached(["meat drop, .1 mus, 100 max, .1 myst, 100 max, .1 mox, 100 max"], {
     forceEquip: $items`PirateRealm eyepatch, lucky gold ring, Red Roger's red left foot, PirateRealm party hat, Drunkula's wineglass`,
   });
   restoreHp(myMaxhp());
@@ -248,7 +248,6 @@ export function main(): { output: string; fun: number } {
   if (lastEncounter === "Your Empire of Dirt") {
     const trash_results = runChoice(1);
     let curTrash;
-    // itemMeat = 0;
     output = "<table><tr><td>#</td><td>Item</td><td>Value</td></tr>";
     do {
       curTrash = TRASH_REG_EXP.exec(trash_results);
@@ -259,7 +258,6 @@ export function main(): { output: string; fun: number } {
             ? autosellPrice(item)
             : mallPrice(item);
         const itemTotal = value * parseInt(curTrash[2]);
-        // itemMeat += itemTotal;
         output += `<tr><td>${curTrash[2]}</td><td>${curTrash[1]}</td><td>${itemTotal}</td></tr>`;
         fileOutput = fileOutput.concat(
           `${curTrash[2]},${curTrash[1]},${itemTotal},`
@@ -268,15 +266,10 @@ export function main(): { output: string; fun: number } {
     } while (curTrash);
     fun = parseCharPane().Fun - startingFun;
     const funMeat = (mallPrice($item`PirateRealm guest pass`) / 600) * fun;
-    // output += `<tr><td>${fun}</td><td>Fun</td><td>${funMeat.toFixed(
-    //   0
-    // )}</td></tr>`;
     const prSession = Session.diff(Session.current(), start);
     prSession.register($item`PirateRealm fun-a-log`, fun);
     const meat = myMeat() - startingMeat;
-    // output += `<tr><td>-</td><td>Meat</td><td>${meat}</td></tr>`;
     const advs = startingAdvs - myAdventures();
-    // output += `<tr><td>-</td><td>Advs</td><td>${advs}</td></tr>`;
     const MPA = prSession.value(garboValue).total / advs;
     output += `<tr><td>-</td><td>MPA</td><td>${MPA.toFixed(0)}</td></tr>`;
     fileOutput = fileOutput.concat(
