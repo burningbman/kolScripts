@@ -13,17 +13,14 @@ import {
   use,
 } from "kolmafia";
 import {
-  $class,
   $effect,
   $item,
   $items,
   $path,
   $slot,
-  ascend,
   Clan,
   get,
   have,
-  Lifestyle,
   Session,
   TrainSet
 } from "libram";
@@ -142,7 +139,8 @@ const runAftercore = () => {
     }
 
     if (!done) {
-      noError = cliExecute('garbo ascend');
+      noError = cliExecute('hccs_pre');
+      noError = noError && cliExecute('garbo ascend');
     }
   }
 
@@ -198,7 +196,6 @@ export function main(args: string): void {
           noError = runAftercore();
         } else {
           if (canAscendNoncasual()) {
-            noError = cliExecute('hccs_pre');
             if (noError) {
               print('Ascending into Community Service', 'green');
               noError = cliExecute('hccs_ascend');
