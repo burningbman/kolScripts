@@ -27,7 +27,7 @@ import {
 import {
   bb_overdrink
 } from "./bb_overdrink";
-import { canAscendNoncasual, waitForStashItems } from "./lib";
+import { canAscendNoncasual, shrug, waitForStashItems } from "./lib";
 import {
   printLoopSession
 } from "./session";
@@ -124,6 +124,7 @@ const runAftercore = () => {
   if (myAdventures() > 0 || myInebriety() <= inebrietyLimit()) {
     print('Running aftercore', 'green');
     waitForStashItems();
+    shrug($effect`Power Ballad of the Arrowsmith`);
 
     if (myAdventures() > 0 && myInebriety() <= inebrietyLimit()) {
       const ascend = done ? '' : 'ascend';
