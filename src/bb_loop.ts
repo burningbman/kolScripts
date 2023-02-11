@@ -150,7 +150,7 @@ const runAftercore = () => {
   print('Aftercore complete', 'green');
 
   if (done) {
-    const allSessions = session.add(Session.fromFile('bb_session_cs.json'));
+    const allSessions = session.add(Session.fromFile('bb_session_aftercore.json'));
     printLoopSession(allSessions, 'full loop');
   }
 
