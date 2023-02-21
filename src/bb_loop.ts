@@ -106,6 +106,12 @@ function setupTrain() {
   TrainSet.Station.TRACKSIDE_DINER]);
 }
 
+function printFullSession(session?: Session) {
+  const lSession = session || Session.current();
+  const allSessions = lSession.add(Session.fromFile('bb_session_aftercore.json'));
+  printLoopSession(allSessions, 'full loop');
+}
+
 const runAftercore = () => {
   let noError = true;
   const workshed = getWorkshed();
@@ -150,8 +156,7 @@ const runAftercore = () => {
   print('Aftercore complete', 'green');
 
   if (done) {
-    const allSessions = session.add(Session.fromFile('bb_session_aftercore.json'));
-    printLoopSession(allSessions, 'full loop');
+    printFullSession(session);
   }
 
   return noError;
@@ -183,6 +188,11 @@ export function main(args: string): void {
   } else if (args) {
     print('Saving log.');
     storeLog();
+    return;
+  }
+
+  if (!canAscendNoncasual() && (myInebriety() > inebrietyLimit())) {
+    printFullSession();
     return;
   }
 

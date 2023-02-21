@@ -23,6 +23,7 @@ import {
   myBuffedstat,
   myPrimestat,
   Stat,
+  outfit,
 } from "kolmafia";
 
 import {
@@ -168,9 +169,7 @@ function goShopping(loot: { [key: string]: number }): void {
 }
 
 function runSailingTurn(mate: string): void {
-  maximizeCached(["meat drop, .1 mus, 100 max, .1 myst, 100 max, .1 mox, 100 max"], {
-    forceEquip: $items`PirateRealm eyepatch, lucky gold ring, Red Roger's red right foot, PirateRealm party hat, Drunkula's wineglass`,
-  });
+  equipOutfit();
   const LOOT = parseCharPane();
   const haveGlue = LOOT.Glue > 0;
 
@@ -199,19 +198,26 @@ function runSailingTurn(mate: string): void {
   }
 }
 
-function runIslandTurn(): boolean {
-  ensureEffect($effect`Feeling Excited`);
+function equipOutfit(): void {
+  outfit('Birthday Suit');
   maximizeCached(["meat drop, .1 mus, 100 max, .1 myst, 100 max, .1 mox, 100 max"], {
     forceEquip: $items`PirateRealm eyepatch, lucky gold ring, Red Roger's red left foot, PirateRealm party hat, Drunkula's wineglass`,
   });
+}
+
+function runIslandTurn(): boolean {
+  ensureEffect($effect`Feeling Excited`);
+  equipOutfit();
   restoreHp(myMaxhp());
   adventure($location`PirateRealm Island`, 1);
   return get("lastEncounter") === "Your Empire of Dirt";
 }
 
-export function main(): { output: string; fun: number } {
+export function main(args?: string): { output: string; fun: number } {
   const start = Session.current();
-  if (myInebriety() <= inebrietyLimit()) {
+  const ignoreDrunk = args?.includes('ignoredrunk');
+
+  if (!ignoreDrunk && myInebriety() <= inebrietyLimit()) {
     throw "Not overdrunk for PirateRealm";
   }
 

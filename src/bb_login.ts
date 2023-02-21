@@ -65,7 +65,7 @@ export function main(): void {
 
     // Cargo Shorts
     if (!get("_cargoPocketEmptied")) {
-      cliExecute('cargo');
+      cliExecute('gausie_cargo');
     }
 
     // Boxing Daycare
