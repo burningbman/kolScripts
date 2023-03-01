@@ -134,7 +134,7 @@ const getDrumMacMPA = (): number => {
 
   return Math.floor(
     ((5 * (meat + drumMac + 130 / 6 + (palmFrond + waterLily) / 3)) / 6) *
-      thumbMultiplier
+    thumbMultiplier
   );
 };
 
@@ -293,10 +293,19 @@ export function main(args: string): void {
         use(numFlaskfull, $item`Flaskfull of Hollow`);
       }
 
-      cliExecute("bb_drumMacFarm");
+      set('valueOfAdventure', drumMacMPA);
+      let noError = cliExecute('garbo nobarf');
+      set('valueOfAdventure', GARBO_MPA);
+      noError = noError && cliExecute("bb_drumMacFarm");
       autosell(availableAmount($item`hot date`), $item`hot date`);
+
+      if (!noError) {
+        print('Something went wrong', 'red');
+        return;
+      }
     }
   }
+
 
   for (const item of [
     $item`drum machine`,
