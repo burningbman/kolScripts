@@ -1,4 +1,7 @@
 import {
+  availableAmount,
+  buy,
+  canAdventure,
   cliExecute,
   equip,
   getWorkshed,
@@ -11,12 +14,15 @@ import {
   takeStash,
   toItem,
   use,
+  useSkill,
 } from "kolmafia";
 import {
   $effect,
   $item,
   $items,
+  $location,
   $path,
+  $skill,
   $slot,
   Clan,
   get,
@@ -127,14 +133,33 @@ const runAftercore = () => {
     garboWorkshed = `workshed=${workshed === $item`cold medicine cabinet` ? 'trainrealm' : 'cmc'}`;
   }
 
+  if (get('_augSkillsCast', 0) === 0) {
+    equip($item`august scepter`);
+    useSkill($skill`Aug. 7th: Lighthouse Day!`);
+    useSkill($skill`Aug. 24th: Waffle Day!`);
+    useSkill($skill`Aug. 2nd: Find an Eleven-Leaf Clover Day`);
+    useSkill($skill`Aug. 18th: Serendipity Day!`);
+    useSkill($skill`Aug. 16th: Roller Coaster Day!`);
+  }
+
   if (myAdventures() > 0 || myInebriety() <= inebrietyLimit()) {
     print('Running aftercore', 'green');
     waitForStashItems();
     shrug($effect`Power Ballad of the Arrowsmith`);
 
+    if (!canAdventure($location`The Sunken Party Yacht`)) {
+      if (availableAmount($item`one-day ticket to Spring Break Beach`) === 0) {
+        buy($item`one-day ticket to Spring Break Beach`, 1, 400000);
+      }
+      use($item`one-day ticket to Spring Break Beach`);
+    }
+
     if (myAdventures() > 0 && myInebriety() <= inebrietyLimit()) {
       const ascend = done ? '' : 'ascend';
-      noError = cliExecute(`garbo ${ascend} ${garboWorkshed}`);
+      const yacht = canAdventure($location`The Sunken Party Yacht`) ? 'yachtzeechain' : '';
+      const command = `garbo ${yacht} ${ascend} ${garboWorkshed}`;
+      print(command, 'green');
+      noError = cliExecute(command);
     }
 
     if (!noError) {

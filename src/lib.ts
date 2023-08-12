@@ -464,7 +464,7 @@ const waitForItems = (items = $items`Pantsgiving, Buddy Bjorn`) => {
   const needed: Item[] = [];
 
   items.forEach(function (item) {
-    if (!stashAmount(item)) {
+    if (!stashAmount(item) && !have(item)) {
       needed.push(item);
     }
   });

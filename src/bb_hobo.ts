@@ -127,17 +127,17 @@ import {
 } from "./hobo/combat";
 import { parse } from "path";
 
-const maxCached = (objectives: string[], options ? : Partial < MaximizeOptions > | undefined) => {
+const maxCached = (objectives: string[], options?: Partial<MaximizeOptions> | undefined) => {
   options = options || {};
   options.forceEquip = options.forceEquip || [];
   if (isDrunk()) {
-    if (!options.forceEquip.includes($item `Drunkula's wineglass`)) {
-      options.forceEquip.push($item `Drunkula's wineglass`);
+    if (!options.forceEquip.includes($item`Drunkula's wineglass`)) {
+      options.forceEquip.push($item`Drunkula's wineglass`);
     }
-    options.forceEquip.push(myBasestat($stat `Moxie`) > 150 ? $item `Jeans of Loathing` : $item `The Ghoul King's ghoulottes`);
+    options.forceEquip.push(myBasestat($stat`Moxie`) > 150 ? $item`Jeans of Loathing` : $item`The Ghoul King's ghoulottes`);
   }
   maximizeCached(objectives, options);
-  have($item `Buddy Bjorn`) && bjornifyFamiliar(bjornFam);
+  have($item`Buddy Bjorn`) && bjornifyFamiliar(bjornFam);
 };
 
 const MPA = 6000;
@@ -146,35 +146,30 @@ const DANCE_PROP = "_bb_hobo.DanceCount";
 const TIRE_COUNT = 32;
 const getBonusEquip = () => {
   const bonusEquip = new Map();
-  bonusEquip.set($item `garbage sticker`, 100);
-  bonusEquip.set($item `lucky gold ring`, 255);
-  bonusEquip.set($item `Mr. Cheeng's spectacles`, 400);
-  bonusEquip.set($item `mafia thumb ring`, MPA * .05);
-  bonusEquip.set($item `carnivorous potted plant`, MPA * .04);
-  bonusEquip.set($item `pantogram pants`, 100);
+  bonusEquip.set($item`garbage sticker`, 100);
+  bonusEquip.set($item`lucky gold ring`, 255);
+  bonusEquip.set($item`Mr. Cheeng's spectacles`, 400);
+  bonusEquip.set($item`mafia thumb ring`, MPA * .05);
+  bonusEquip.set($item`carnivorous potted plant`, MPA * .04);
+  bonusEquip.set($item`pantogram pants`, 100);
   bonusEquip.set($item`June cleaver`, 250);
   bonusEquip.set($item`tiny stillsuit`, 9); // just under familiar weight of amulet coin
-  bonusEquip.set($item `designer sweatpants`, get("sweat", 0) < 25 * (3 - get("_sweatOutSomeBoozeUsed", 0)) ? 500 : mallPrice($item `sweat-ade`) / 50 / 2);
-  have($item `Buddy Bjorn`) && bonusEquip.set($item `Buddy Bjorn`, pickRider('hobo')?.meatVal());
-  have($item `Pantsgiving`) && bonusEquip.set($item `Pantsgiving`, get("_pantsgivingCount") < 50 ? 500 : 0);
+  bonusEquip.set($item`designer sweatpants`, get("sweat", 0) < 25 * (3 - get("_sweatOutSomeBoozeUsed", 0)) ? 500 : mallPrice($item`sweat-ade`) / 50 / 2);
+  have($item`Buddy Bjorn`) && bonusEquip.set($item`Buddy Bjorn`, bjornFam);
+  have($item`Pantsgiving`) && bonusEquip.set($item`Pantsgiving`, get("_pantsgivingCount") < 50 ? 500 : 0);
   return bonusEquip;
 };
 
-let bjornFam = $familiar `Frozen Gravy Fairy`;
-const handleBjorn = () => {
-  createRiderMode('hobo', () => (0), false, false);
-  const bestRider = pickRider('hobo');
-  bjornFam = bestRider ? bestRider.familiar : bjornFam;
-};
+let bjornFam = $familiar`Frozen Gravy Fairy`;
 
 enum Part {
   boots = 1,
-    eyes = 2,
-    guts = 3,
-    skulls = 4,
-    crotches = 5,
-    skins = 6,
-    none = 7,
+  eyes = 2,
+  guts = 3,
+  skulls = 4,
+  crotches = 5,
+  skins = 6,
+  none = 7,
 }
 
 const PART_ORDER = [
@@ -187,13 +182,13 @@ const PART_ORDER = [
 ];
 
 const partToSkill = {
-  [Part.boots]: $skill `Spirit of Cayenne`,
-  [Part.eyes]: $skill `Spirit of Peppermint`,
-  [Part.guts]: $skill `Spirit of Garlic`,
-  [Part.skulls]: $skill `Spirit of Wormwood`,
-  [Part.crotches]: $skill `Spirit of Bacon Grease`,
-  [Part.skins]: $skill `Spirit of Nothing`,
-  [Part.none]: $skill `Spirit of Nothing`,
+  [Part.boots]: $skill`Spirit of Cayenne`,
+  [Part.eyes]: $skill`Spirit of Peppermint`,
+  [Part.guts]: $skill`Spirit of Garlic`,
+  [Part.skulls]: $skill`Spirit of Wormwood`,
+  [Part.crotches]: $skill`Spirit of Bacon Grease`,
+  [Part.skins]: $skill`Spirit of Nothing`,
+  [Part.none]: $skill`Spirit of Nothing`,
 };
 
 type scoboParts = {
@@ -208,17 +203,17 @@ type scoboParts = {
 
 const setFamiliar = (): void => {
   if (isDrunk()) {
-    useFamiliar($familiar `Stooper`);
+    useFamiliar($familiar`Stooper`);
   } else {
     // set snapper to track hobos
-    useFamiliar($familiar `Red-Nosed Snapper`);
-    if (get("redSnapperPhylum") !== $phylum `hobo`) {
+    useFamiliar($familiar`Red-Nosed Snapper`);
+    if (get("redSnapperPhylum") !== $phylum`hobo`) {
       visitUrl("familiar.php?action=guideme&pwd");
       visitUrl("choice.php?pwd&whichchoice=1396&option=1&cat=hobo");
     }
   }
 
-  equip($item `miniature crystal ball`);
+  equip($item`miniature crystal ball`);
 };
 
 const getRichardCounts = (): scoboParts => {
@@ -261,7 +256,7 @@ const getRichardCounts = (): scoboParts => {
 const upkeepHpAndMp = (): void => {
   if (myMp() < 100) {
     if (get('_sausagesEaten', 0) < 23 && !isGreyYou()) {
-      eat($item `magical sausage`);
+      eat($item`magical sausage`);
     } else {
       restoreMp(200);
     }
@@ -272,10 +267,10 @@ const upkeepHpAndMp = (): void => {
 function fightSausageIfGuaranteed(macro: Macro): void {
   if (sausageFightGuaranteed() && !isDrunk()) {
     print("Fighting a Kramco in the Noob Cave");
-    const currentOffhand = equippedItem($slot `off-hand`);
+    const currentOffhand = equippedItem($slot`off-hand`);
     MACRO_KILL.setAutoAttack();
-    equip($item `Kramco Sausage-o-Matic™`);
-    adv1($location `Noob Cave`, -1, "");
+    equip($item`Kramco Sausage-o-Matic™`);
+    adv1($location`Noob Cave`, -1, "");
 
     //Equip whatever we had here
     equip(currentOffhand);
@@ -292,18 +287,18 @@ const equipSneaky = ({
   const bonusEquip = getBonusEquip();
 
   if (sewers) {
-    bonusEquip.set($item `hobo code binder`, 1000);
-    bonusEquip.set($item `gatorskin umbrella`, 1000);
-    forceEquip = forceEquip.concat(...$items `hobo code binder, gatorskin umbrella`);
-    (have($item `Greatest American Pants`) || haveEquipped($item `Greatest American Pants`)) && forceEquip.push($item `Greatest American Pants`);
+    bonusEquip.set($item`hobo code binder`, 1000);
+    bonusEquip.set($item`gatorskin umbrella`, 1000);
+    forceEquip = forceEquip.concat(...$items`hobo code binder, gatorskin umbrella`);
+    (have($item`Greatest American Pants`) || haveEquipped($item`Greatest American Pants`)) && forceEquip.push($item`Greatest American Pants`);
   }
   if (physical) {
-    if (isDrunk() || myClass() !== $class `Seal Clubber`) {
-      forceEquip.push($item `Fourth of May Cosplay Saber`);
+    if (isDrunk() || myClass() !== $class`Seal Clubber`) {
+      forceEquip.push($item`Fourth of May Cosplay Saber`);
     }
   }
   if (isDrunk()) {
-    bonusEquip.set($item `Drunkula's wineglass`, 1000);
+    bonusEquip.set($item`Drunkula's wineglass`, 1000);
   }
   maxCached(["-combat 25 min", '.01 mp regen'], {
     forceEquip,
@@ -313,9 +308,9 @@ const equipSneaky = ({
 
 const upkeepDmgWhileDrunk = () => {
   if (isDrunk()) {
-    ensureEffect($effect `Carol of the Bulls`);
-    ensureEffect($effect `Song of the North`);
-    ensureEffect($effect `Frenzied, Bloody`);
+    ensureEffect($effect`Carol of the Bulls`);
+    ensureEffect($effect`Song of the North`);
+    ensureEffect($effect`Frenzied, Bloody`);
   }
 };
 
@@ -326,28 +321,28 @@ const getSneakyForHobos = ({
 }): void => {
 
   get('_horsery', '') !== 'dark horse' && cliExecute('horsery -combat');
-  shrug($effect `Hippy Stench`);
+  shrug($effect`Hippy Stench`);
   if (!isGreyYou()) {
-    ensureEffect($effect `Smooth Movements`);
-    ensureEffect($effect `The Sonata of Sneakiness`);
-    shrug($effect `Carlweather's Cantata of Confrontation`);
+    ensureEffect($effect`Smooth Movements`);
+    ensureEffect($effect`The Sonata of Sneakiness`);
+    shrug($effect`Carlweather's Cantata of Confrontation`);
   } else {
-    ensureEffect($effect `Shifted Phase`);
-    ensureEffect($effect `Darkened Photons`);
+    ensureEffect($effect`Shifted Phase`);
+    ensureEffect($effect`Darkened Photons`);
   }
   upkeepDmgWhileDrunk();
 
   if (!isGreyYou() && get("_feelLonelyUsed") < 3) {
-    ensureEffect($effect `Feeling Lonely`);
+    ensureEffect($effect`Feeling Lonely`);
   }
 
   if (sewers) {
     if (USE_BANDER) {
       maxCached(["familiar weight"], {
-        forceEquip: $items `hobo code binder, gatorskin umbrella`,
+        forceEquip: $items`hobo code binder, gatorskin umbrella`,
       });
     }
-    if (get("_banderRunaways") >= Math.floor((familiarWeight($familiar `Pair of Stomping Boots`) + weightAdjustment()) / 5)) {
+    if (get("_banderRunaways") >= Math.floor((familiarWeight($familiar`Pair of Stomping Boots`) + weightAdjustment()) / 5)) {
       USE_BANDER = false;
       equipSneaky({
         sewers,
@@ -372,12 +367,12 @@ const getConfrontationalForHobos = () => {
     bonusEquip: getBonusEquip()
   });
 
-  ensureItem(1, $item `sombrero-mounted sparkler`);
+  ensureItem(1, $item`sombrero-mounted sparkler`);
   get('_horsery', '') === 'dark horse' && cliExecute('horsery regen');
-  ensureEffect($effect `Musk of the Moose`);
-  ensureEffect($effect `Carlweather's Cantata of Confrontation`);
-  ensureEffect($effect `Hippy Stench`);
-  shrug($effect `The Sonata of Sneakiness`);
+  ensureEffect($effect`Musk of the Moose`);
+  ensureEffect($effect`Carlweather's Cantata of Confrontation`);
+  ensureEffect($effect`Hippy Stench`);
+  shrug($effect`The Sonata of Sneakiness`);
   upkeepDmgWhileDrunk();
 
   if (combatRateModifier() < 25) throw new Error("Not confrontational enough.");
@@ -402,7 +397,7 @@ const getHoboCountsRe = function (regex: RegExp): number {
 };
 
 function calculateGratesAndValues(): {
-  grates: number;valves: number
+  grates: number; valves: number
 } {
   // let grateCount = 0;
   // let valveCount = 0;
@@ -435,9 +430,9 @@ function throughSewers() {
 const getSewerItems = () => {
   if (isGreyYou()) return true;
   return (
-    !$items `unfortunate dumplings, sewer wad, bottle of Ooze-O, gatorskin umbrella`.some(
+    !$items`unfortunate dumplings, sewer wad, bottle of Ooze-O, gatorskin umbrella`.some(
       (i) => !retrieveItem(1, i)
-    ) && retrieveItem(3, $item `oil of oiliness`)
+    ) && retrieveItem(3, $item`oil of oiliness`)
   );
 };
 
@@ -456,8 +451,8 @@ function runSewer() {
       sewers: true
     });
 
-    have($item `gatorskin umbrella`) && equip($item `gatorskin umbrella`, $slot `weapon`);
-    equip($item `hobo code binder`);
+    have($item`gatorskin umbrella`) && equip($item`gatorskin umbrella`, $slot`weapon`);
+    equip($item`hobo code binder`);
 
     if (checkGravesAndValues) {
       const sewerStatus = calculateGratesAndValues();
@@ -473,32 +468,32 @@ function runSewer() {
     // setup equipment for banishes and free kills
     if (get("_feelHatredUsed") === 3 && get("_snokebombUsed") === 3) {
       if (get("_reflexHammerUsed") < 3)
-        equip($slot `acc3`, $item `Lil' Doctor™ bag`);
+        equip($slot`acc3`, $item`Lil' Doctor™ bag`);
       else if (get("_saberForceUses") < 5)
-        equip($item `Fourth of May Cosplay Saber`);
+        equip($item`Fourth of May Cosplay Saber`);
       else if (get("_chestXRayUsed") < 3)
-        equip($slot `acc3`, $item `Lil' Doctor™ bag`);
+        equip($slot`acc3`, $item`Lil' Doctor™ bag`);
     }
 
     if (
       get("_banderRunaways") <
       Math.floor(
-        (familiarWeight($familiar `Pair of Stomping Boots`) +
+        (familiarWeight($familiar`Pair of Stomping Boots`) +
           weightAdjustment()) /
         5
       )
     ) {
-      useFamiliar($familiar `Pair of Stomping Boots`);
-      Macro.trySkill($skill `Release the Boots`)
+      useFamiliar($familiar`Pair of Stomping Boots`);
+      Macro.trySkill($skill`Release the Boots`)
         .step("runaway")
         .setAutoAttack();
     } else {
-      useFamiliar($familiar `Shorter-Order Cook`);
+      useFamiliar($familiar`Shorter-Order Cook`);
       SEWER_MACRO.setAutoAttack();
     }
 
     HOBO_MOOD.execute();
-    adv1($location `A Maze of Sewer Tunnels`, -1, "");
+    adv1($location`A Maze of Sewer Tunnels`, -1, "");
   }
 
   // const sewerStatus = calculateGratesAndValues();
@@ -530,15 +525,15 @@ function sideZoneLoop(
   sneaky: boolean,
   macro: Macro,
   callback: () => {
-    done: boolean;macro ? : Macro
+    done: boolean; macro?: Macro
   }
 ) {
   let done = false;
   const upkeepCombat = () => {
-    if (location !== $location `Hobopolis Town Square`) {
+    if (location !== $location`Hobopolis Town Square`) {
       const physical = [
-        $location `Burnbarrel Blvd.`,
-        $location `The Ancient Hobo Burial Ground`,
+        $location`Burnbarrel Blvd.`,
+        $location`The Ancient Hobo Burial Ground`,
       ].includes(location);
 
       if (sneaky) {
@@ -564,7 +559,7 @@ function sideZoneLoop(
 
     adventureMacroAuto(location, macro);
     putCloset(itemAmount($item`hobo nickel`), $item`hobo nickel`);
-    
+
     handleCleaver();
 
     let tempMacro;
@@ -640,7 +635,7 @@ function runEE(totalIcicles = DEFAULT_ICICLES) {
     "blue"
   );
 
-  sideZoneLoop($location `Exposure Esplanade`, true, MACRO_KILL, function () {
+  sideZoneLoop($location`Exposure Esplanade`, true, MACRO_KILL, function () {
     let done = false;
     if (get("lastEncounter").includes("Piping Cold")) {
       if (get("choiceAdventure215") === 3) {
@@ -688,8 +683,8 @@ function tiresToKills(tires: number): number {
 
 function runBB(onStack = 0, stack1 = 0, stack2 = 0) {
   if (!isGreyYou()) {
-    HOBO_MOOD.skill($skill `Silent Hunter`);
-    HOBO_MOOD.skill($skill `Cletus's Canticle of Celerity`);
+    HOBO_MOOD.skill($skill`Silent Hunter`);
+    HOBO_MOOD.skill($skill`Cletus's Canticle of Celerity`);
   }
   //TODO: store counts in new property or whatever storage mafia uses.
   setChoice(206, 2); // Getting Tired; Toss the tire on the fire gently
@@ -701,8 +696,8 @@ function runBB(onStack = 0, stack1 = 0, stack2 = 0) {
   let kills = getHoboCountsRe(/defeated\s+Hot\s+hobo\s+x\s+(\d+)/gm);
   let tireCount =
     onStack > 0 ?
-    onStack :
-    getHoboCountsRe(/on the fire \((\d+) turns?\)/gm) % TIRE_COUNT;
+      onStack :
+      getHoboCountsRe(/on the fire \((\d+) turns?\)/gm) % TIRE_COUNT;
   let tirevalanches = getHoboCountsRe(/started ((\d+)) tirevalanch/gm);
 
   const stackKills: {
@@ -753,7 +748,7 @@ function runBB(onStack = 0, stack1 = 0, stack2 = 0) {
 
   calculateThirdTireStack();
 
-  sideZoneLoop($location `Burnbarrel Blvd.`, true, MACRO_KILL, function () {
+  sideZoneLoop($location`Burnbarrel Blvd.`, true, MACRO_KILL, function () {
     let done = false;
     kills = getHoboCountsRe(/defeated\s+Hot\s+hobo\s+x\s+(\d+)/gm);
 
@@ -795,7 +790,7 @@ function runBB(onStack = 0, stack1 = 0, stack2 = 0) {
   print(`Done in BB. Tires on the stack: ${tireCount}`, "red");
 }
 
-const getNeededPart = (parts: scoboParts, desiredCount: number, noSkins:boolean): Part => {
+const getNeededPart = (parts: scoboParts, desiredCount: number, noSkins: boolean): Part => {
   let desiredPart;
   if (isDrunk()) {
     if (parts[Part.skins] < desiredCount) {
@@ -831,11 +826,11 @@ type tsArg = {
 };
 
 const prepForSkins = (skinsLeft: number): Macro => {
-  while (haveEffect($effect `Carol of the Bulls`) < skinsLeft) {
-    if (myMp() < 130 && !isGreyYou()) eat($item `magical sausage`);
-    useSkill($skill `Carol of the Bulls`);
-    useSkill($skill `Song of the North`);
-    useSkill($skill `Blood Frenzy`);
+  while (haveEffect($effect`Carol of the Bulls`) < skinsLeft) {
+    if (myMp() < 130 && !isGreyYou()) eat($item`magical sausage`);
+    useSkill($skill`Carol of the Bulls`);
+    useSkill($skill`Song of the North`);
+    useSkill($skill`Blood Frenzy`);
   }
 
   maxCached(["10 weapon dmg percent", "muscle"]);
@@ -849,22 +844,22 @@ const runTS = ({
 }: tsArg): void => {
   let part: Part;
   let stopAfterFood: boolean;
-  let macro = Macro.skill($skill `Stuffed Mortar Shell`, $skill `Micrometeorite`);
+  let macro = Macro.skill($skill`Stuffed Mortar Shell`, $skill`Micrometeorite`);
   let parts = getRichardCounts();
 
-  if (myClass().primestat !== $stat `Mysticality` && !isDrunk()) {
-    HOBO_MOOD.skill($skill `Song of Sauce`);
+  if (myClass().primestat !== $stat`Mysticality` && !isDrunk()) {
+    HOBO_MOOD.skill($skill`Song of Sauce`);
   }
 
   const getDressed = () => {
     const forceEquip: Item[] = [];
-    isDrunk() && forceEquip.push($item `Fourth of May Cosplay Saber`);
+    isDrunk() && forceEquip.push($item`Fourth of May Cosplay Saber`);
     getFood && forceEquip.push($item`hobo code binder`);
     const reqs = getFood ? ['-12 combat'] : [];
     maxCached(reqs.concat(part === Part.skins ? ['weapon dmg percent', '.01 mp regen'] : ['.5 spell dmg percent', '.01 mp regen']), {
       forceEquip,
       bonusEquip: getBonusEquip(),
-      preventEquip: $items `carnivorous potted plant` // don't get hobo parts if plant eats them
+      preventEquip: $items`carnivorous potted plant` // don't get hobo parts if plant eats them
     });
   };
 
@@ -882,8 +877,8 @@ const runTS = ({
 
   if (getFood) {
     stopAfterFood = userConfirm("Stop after getting food?");
-    takeCloset($item `hobo nickel`, 40);
-    equip($item `hobo code binder`);
+    takeCloset($item`hobo nickel`, 40);
+    equip($item`hobo code binder`);
 
     setChoice(272, 1); // Enter the Marketplace
     setChoice(231, 1); // Hobo Marketplace #1; Food Court
@@ -905,7 +900,7 @@ const runTS = ({
 
   getDressed();
 
-  sideZoneLoop($location `Hobopolis Town Square`, true, macro, () => {
+  sideZoneLoop($location`Hobopolis Town Square`, true, macro, () => {
     let done = false;
     if (getProperty("lastEncounter").includes("Big Merv's Protein Shakes")) {
       // Switch to getting booze
@@ -946,7 +941,7 @@ const runTS = ({
 
     getDressed();
 
-    if (getFood) takeCloset($item `hobo nickel`, 20);
+    if (getFood) takeCloset($item`hobo nickel`, 20);
 
     return {
       done,
@@ -990,77 +985,77 @@ function prepFrosty() {
   }
 
   setClan("Alliance From Heck");
-  if (stashAmount($item `Platinum Yendorian Express Card`) < 1) {
+  if (stashAmount($item`Platinum Yendorian Express Card`) < 1) {
     throw new Error("PYEC not currently available.");
   }
-  takeStash(1, $item `Platinum Yendorian Express Card`);
+  takeStash(1, $item`Platinum Yendorian Express Card`);
 
   setClan("Bonus Adventures from Hell");
 
-  useFamiliar($familiar `Jumpsuited Hound Dog`);
+  useFamiliar($familiar`Jumpsuited Hound Dog`);
 
   maximizeCached(['item drop, all res'], {
-    forceEquip: $items `Fourth of May Cosplay Saber`,
-    preventEquip: $items `broken champagne bottle`
+    forceEquip: $items`Fourth of May Cosplay Saber`,
+    preventEquip: $items`broken champagne bottle`
   });
 
   // init (Ol' Scratch)
-  ensureEffect($effect `Springy Fusilli`);
-  ensureEffect($effect `Song of Slowness`);
-  ensureEffect($effect `Resting Beach Face`);
+  ensureEffect($effect`Springy Fusilli`);
+  ensureEffect($effect`Song of Slowness`);
+  ensureEffect($effect`Resting Beach Face`);
 
   // passive damage
-  ensureEffect($effect `Permanent Halloween`);
-  ensureEffect($effect `Boner Battalion`);
-  ensureEffect($effect `Feeling Nervous`);
-  ensureEffect($effect `Frigidalmatian`);
-  ensureEffect($effect `Mathematically Precise`);
-  ensureEffect($effect `Bendin' Hell`);
+  ensureEffect($effect`Permanent Halloween`);
+  ensureEffect($effect`Boner Battalion`);
+  ensureEffect($effect`Feeling Nervous`);
+  ensureEffect($effect`Frigidalmatian`);
+  ensureEffect($effect`Mathematically Precise`);
+  ensureEffect($effect`Bendin' Hell`);
 
   // combat items
-  retrieveItem(40, $item `electronics kit`);
+  retrieveItem(40, $item`electronics kit`);
 
   // hp
-  getEffect($effect `Starry-Eyed`);
-  ensureEffect($effect `Triple-Sized`);
-  getEffect($effect `Lack of Body-Building`);
-  ensureEffect($effect `Plump and Chubby`);
-  ensureEffect($effect `Blood Bubble`);
+  getEffect($effect`Starry-Eyed`);
+  ensureEffect($effect`Triple-Sized`);
+  getEffect($effect`Lack of Body-Building`);
+  ensureEffect($effect`Plump and Chubby`);
+  ensureEffect($effect`Blood Bubble`);
 
   // res
-  getEffect($effect `Cold as Nice`);
-  ensureEffect($effect `Feeling Peaceful`);
-  ensureEffect($effect `Oiled-Up`);
-  ensureEffect($effect `Spiro Gyro`);
-  ensureEffect($effect `Ancient Protected`);
+  getEffect($effect`Cold as Nice`);
+  ensureEffect($effect`Feeling Peaceful`);
+  ensureEffect($effect`Oiled-Up`);
+  ensureEffect($effect`Spiro Gyro`);
+  ensureEffect($effect`Ancient Protected`);
 
   // item drop
   cliExecute("synthesize collection");
-  ensureEffect($effect `Fat Leon's Phat Loot Lyric`);
-  ensureEffect($effect `Disco Leer`);
-  ensureEffect($effect `The Spirit of Taking`);
-  ensureEffect($effect `Singer's Faithful Ocelot`);
-  ensureEffect($effect `Blood Bond`);
-  ensureEffect($effect `Leash of Linguini`);
-  ensureEffect($effect `Empathy`);
-  getEffect($effect `Quadrilled`);
-  getEffect($effect `Uncucumbered`);
-  getEffect($effect `Do I Know You From Somewhere?`);
-  getEffect($effect `Hustlin'`);
+  ensureEffect($effect`Fat Leon's Phat Loot Lyric`);
+  ensureEffect($effect`Disco Leer`);
+  ensureEffect($effect`The Spirit of Taking`);
+  ensureEffect($effect`Singer's Faithful Ocelot`);
+  ensureEffect($effect`Blood Bond`);
+  ensureEffect($effect`Leash of Linguini`);
+  ensureEffect($effect`Empathy`);
+  getEffect($effect`Quadrilled`);
+  getEffect($effect`Uncucumbered`);
+  getEffect($effect`Do I Know You From Somewhere?`);
+  getEffect($effect`Hustlin'`);
   // ensureEffect($effect `Bubble Vision`);
-  ensureEffect($effect `Polka Face`);
-  ensureEffect($effect `Steely-Eyed Squint`);
+  ensureEffect($effect`Polka Face`);
+  ensureEffect($effect`Steely-Eyed Squint`);
 
   if (
-    myClass() === $class `Pastamancer` &&
-    myThrall().skill !== $skill `Bind Spice Ghost`
+    myClass() === $class`Pastamancer` &&
+    myThrall().skill !== $skill`Bind Spice Ghost`
   ) {
-    useSkill($skill `Bind Spice Ghost`);
+    useSkill($skill`Bind Spice Ghost`);
   }
 
-  use($item `Platinum Yendorian Express Card`);
+  use($item`Platinum Yendorian Express Card`);
   setClan("Alliance From Heck");
-  putStash(1, $item `Platinum Yendorian Express Card`);
+  putStash(1, $item`Platinum Yendorian Express Card`);
   setClan(curClan);
 
   if (numericModifier('Item Drop') < 1000) {
@@ -1069,16 +1064,16 @@ function prepFrosty() {
 
   // Frosty
   fightBoss({
-    location: $location `Exposure Esplanade`,
+    location: $location`Exposure Esplanade`,
     macro: Macro.attack().repeat(),
-    item: $item `Frosty's frosty mug`,
+    item: $item`Frosty's frosty mug`,
     choice: 202
   });
   // Scratch
   fightBoss({
-    location: $location `Burnbarrel Blvd.`,
-    macro: Macro.item($item `electronics kit`).repeat(),
-    item: $item `Ol' Scratch's salad fork`,
+    location: $location`Burnbarrel Blvd.`,
+    macro: Macro.item($item`electronics kit`).repeat(),
+    item: $item`Ol' Scratch's salad fork`,
     choice: 201
   });
   // Chester
@@ -1105,18 +1100,18 @@ function prepFrosty() {
   });
   // Zombo
   fightBoss({
-    location: $location `The Ancient Hobo Burial Ground`,
+    location: $location`The Ancient Hobo Burial Ground`,
     macro: Macro
-      .item([$item `electronics kit`, $item `electronics kit`])
-      .item([$item `electronics kit`, $item `electronics kit`])
+      .item([$item`electronics kit`, $item`electronics kit`])
+      .item([$item`electronics kit`, $item`electronics kit`])
       .attack().repeat(),
-    item: $item `voodoo snuff`,
+    item: $item`voodoo snuff`,
     choice: 204
   });
   // re-equip what Zombo knocked off
   maximizeCached(['item drop, all res'], {
-    forceEquip: $items `Fourth of May Cosplay Saber`,
-    preventEquip: $items `broken champagne bottle`
+    forceEquip: $items`Fourth of May Cosplay Saber`,
+    preventEquip: $items`broken champagne bottle`
   });
 }
 
@@ -1141,10 +1136,9 @@ const getFromStash = (items: Item[]) => {
 };
 
 const getHoboGearFromStash = (items: Item[]) => {
-  !have($item `Buddy Bjorn`) && items.push($item `Buddy Bjorn`);
-  get('_pantsgivingCount') < 50 && items.push($item `Pantsgiving`);
+  !have($item`Buddy Bjorn`) && items.push($item`Buddy Bjorn`);
+  get('_pantsgivingCount') < 50 && items.push($item`Pantsgiving`);
   getFromStash(items);
-  handleBjorn();
 };
 
 function runTheHeap(playingWithOthers = false) {
@@ -1164,7 +1158,7 @@ function runTheHeap(playingWithOthers = false) {
 
   print("Starting Heap", "green");
 
-  sideZoneLoop($location `The Heap`, true, MACRO_KILL, function () {
+  sideZoneLoop($location`The Heap`, true, MACRO_KILL, function () {
     const lastEncounter = get("lastEncounter");
     const done = lastEncounter.includes("Deep Enough to Dive");
     if (lastEncounter.includes("You vs. The Volcano")) {
@@ -1220,7 +1214,7 @@ function runPLD(maxFlimFlams = 10) {
   set("choiceAdventure294", 1); // Maybe It's a Sexy Snake! Take a Chance?
   set("choiceAdventure205", 2); // Don't fight Chester
 
-  sideZoneLoop($location `The Purple Light District`, false, MACRO_KILL, () => {
+  sideZoneLoop($location`The Purple Light District`, false, MACRO_KILL, () => {
     const lastEncounter = get("lastEncounter");
     let done = false;
 
@@ -1286,15 +1280,15 @@ function runAHBG(danceCount = 0) {
 
   const upkeepWeaponDamage = () => {
     if (isGreyYou()) return;
-    if (myMp() < 130) eat($item `magical sausage`);
-    ensureEffect($effect `Carol of the Bulls`);
-    ensureEffect($effect `Song of the North`);
+    if (myMp() < 130) eat($item`magical sausage`);
+    ensureEffect($effect`Carol of the Bulls`);
+    ensureEffect($effect`Song of the North`);
   };
 
   upkeepWeaponDamage();
 
   sideZoneLoop(
-    $location `The Ancient Hobo Burial Ground`,
+    $location`The Ancient Hobo Burial Ground`,
     true,
     Macro.attack().repeat(),
     function () {
@@ -1336,7 +1330,7 @@ function parseArgs(args: string): { getFood: boolean, hoboKills: number, noSkins
     getFood: args.includes('food'),
     hoboKills: hoboKills ? parseInt(hoboKills[1]) : 0,
     noSkins: args.includes('noskin')
-      };
+  };
 }
 
 function runOption(actions: string[], stashItems: Item[]) {
@@ -1488,7 +1482,7 @@ export function main(input: string): void {
     }
     if (stashItems.length) {
       Slot.all().forEach((slot) => {
-        stashItems.includes(equippedItem(slot)) && equip(slot, $item `none`);
+        stashItems.includes(equippedItem(slot)) && equip(slot, $item`none`);
       });
       returnItems(stashItems);
     }
