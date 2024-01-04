@@ -4,6 +4,7 @@ const path = require("path");
 
 module.exports = {
   entry: {
+    asc: "./src/ascend/asc.ts",
     bb_stashStealable: "./src/bb_stashStealable.ts",
     bb_drumMacFarm: "./src/bb_drumMacFarm.ts",
     bb_pvpCalc: "./src/bb_pvpCalc.ts",
@@ -21,7 +22,7 @@ module.exports = {
     bb_tcrs: "./src/bb_tcrs.ts",
     bb_philter: "./src/bb_philter.ts",
     bb_postGloop: "./src/bb_postGloop.ts",
-    bb_preAdventureAscending: "./src/bb_preAdventureAscending.ts",
+    bb_preAdventureSMOL: "./src/ascend/bb_preAdvSMOL.ts",
   },
   mode: "development",
   devtool: false,
@@ -32,9 +33,9 @@ module.exports = {
   },
   resolve: {
     extensions: [".ts", ".tsx", ".js", ".json"],
-      fallback: {
-        "process": false
-      }
+    fallback: {
+      "process": false
+    }
   },
   module: {
     rules: [{
@@ -42,7 +43,7 @@ module.exports = {
       test: /\.(ts|js)x?$/,
       // exclude: /node_modules/,
       loader: "babel-loader",
-    },],
+    }, ],
   },
   plugins: [],
   externals: {

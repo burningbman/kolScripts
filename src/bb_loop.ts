@@ -5,12 +5,15 @@ import {
   cliExecute,
   equip,
   getWorkshed,
+  holiday,
   inebrietyLimit,
   myAdventures,
   myInebriety,
   myPath,
+  outfit,
   print,
   putStash,
+  runChoice,
   takeStash,
   toItem,
   use,
@@ -28,6 +31,7 @@ import {
   get,
   have,
   Session,
+  set,
   TrainSet
 } from "libram";
 import {
@@ -44,8 +48,9 @@ const notOverdrunk = () => {
 };
 
 const logSession = (leg: string, fun: number, print?: boolean) => {
-  const session = Session.current();
+  const session = Session.current(true);
   session.register($item`PirateRealm fun-a-log`, fun);
+  session.register($item`A Guide to Burning Leaves`, 0);
   session.toFile(`bb_session_${leg}.json`);
   print && printLoopSession(session, leg);
   return session;
@@ -66,7 +71,7 @@ const runCommunityService = () => {
 };
 
 const storeLog = () => {
-  Session.current().toFile("bb_session_custom.json");
+  Session.current(true).toFile("bb_session_custom.json");
 };
 
 const runCasual = () => {
@@ -113,7 +118,7 @@ function setupTrain() {
 }
 
 function printFullSession(session?: Session) {
-  const lSession = session || Session.current();
+  const lSession = session || Session.current(true);
   const allSessions = lSession.add(Session.fromFile('bb_session_aftercore.json'));
   printLoopSession(allSessions, 'full loop');
 }
@@ -133,31 +138,14 @@ const runAftercore = () => {
     garboWorkshed = `workshed=${workshed === $item`cold medicine cabinet` ? 'trainrealm' : 'cmc'}`;
   }
 
-  if (get('_augSkillsCast', 0) === 0) {
-    equip($item`august scepter`);
-    useSkill($skill`Aug. 7th: Lighthouse Day!`);
-    useSkill($skill`Aug. 24th: Waffle Day!`);
-    useSkill($skill`Aug. 2nd: Find an Eleven-Leaf Clover Day`);
-    useSkill($skill`Aug. 18th: Serendipity Day!`);
-    useSkill($skill`Aug. 16th: Roller Coaster Day!`);
-  }
-
   if (myAdventures() > 0 || myInebriety() <= inebrietyLimit()) {
     print('Running aftercore', 'green');
     waitForStashItems();
     shrug($effect`Power Ballad of the Arrowsmith`);
 
-    if (!canAdventure($location`The Sunken Party Yacht`)) {
-      if (availableAmount($item`one-day ticket to Spring Break Beach`) === 0) {
-        buy($item`one-day ticket to Spring Break Beach`, 1, 400000);
-      }
-      use($item`one-day ticket to Spring Break Beach`);
-    }
-
     if (myAdventures() > 0 && myInebriety() <= inebrietyLimit()) {
       const ascend = done ? '' : 'ascend';
-      const yacht = canAdventure($location`The Sunken Party Yacht`) ? 'yachtzeechain' : '';
-      const command = `garbo ${yacht} ${ascend} ${garboWorkshed}`;
+      const command = `garbo ${ascend} ${garboWorkshed}`;
       print(command, 'green');
       noError = cliExecute(command);
     }
@@ -171,8 +159,13 @@ const runAftercore = () => {
     }
 
     if (!done) {
+      // if (!get('_mapToACandyRichBlockUsed') && !holiday().includes('Halloween')) {
+      //   use($item`map to a candy-rich block`);
+      //   runChoice(2);
+      //   outfit(get('freecandy_treatOutfit'));
+      //   cliExecute('freecandy 1');
+      // }
       noError = cliExecute('hccs_pre');
-      noError = noError && cliExecute('garbo ascend');
     }
   }
 
@@ -198,6 +191,7 @@ function parseArgs(args: string): { aftercore: boolean, casual: boolean, hobo: b
 }
 
 export function main(args: string): void {
+  set('betweenBattleScript', '');
   const options = parseArgs(args);
 
   if (options.aftercore) {

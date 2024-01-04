@@ -458,8 +458,7 @@ const timeUntilRollover = () => {
 
 const waitForItems = (items = $items`Pantsgiving, Buddy Bjorn`) => {
   myClass() !== $class`Seal Clubber` && !items.includes($item`haiku katana`) && items.push($item`haiku katana`);
-  const clan = getClanId();
-  Clan.join("Alliance from Heck");
+
   refreshStash();
   const needed: Item[] = [];
 
@@ -470,7 +469,6 @@ const waitForItems = (items = $items`Pantsgiving, Buddy Bjorn`) => {
   });
 
   if (get('bb_forceGarbo', false) || timeUntilRollover() < 4) needed.splice(0, needed.length);
-  Clan.join(clan);
   return needed;
 };
 
@@ -481,6 +479,8 @@ const padNum = (num: number, pad: number) => {
 };
 
 export const waitForStashItems = (items?: Item[]): void => {
+  const clan = getClanId();
+  Clan.join("Alliance from Heck");
   let neededItems = waitForItems(items);
   while (neededItems.length) {
     const now = new Date(Date.now());
@@ -492,6 +492,7 @@ export const waitForStashItems = (items?: Item[]): void => {
     neededItems = waitForItems(items);
   }
   set('bb_forceGarbo', false);
+  Clan.join(clan);
 };
 
 export const returnItems = (items: Item[]): void => {
